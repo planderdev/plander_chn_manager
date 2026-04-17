@@ -1,0 +1,91 @@
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/server';
+import { deleteInfluencerAction } from '@/actions/influencers';
+import { contactStatusLabel } from '@/lib/labels';
+import ChannelIcon from '@/components/ChannelIcon';
+import MoneyText from '@/components/MoneyText';
+import { getI18n } from '@/lib/i18n/server';
+import { hasSupabaseEnv } from '@/lib/env';
+
+
+export default async function InfluencersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { t, locale } = await getI18n();
+  const { q } = await searchParams;
+  if (!hasSupabaseEnv()) {
+    const list = [
+      { id: 1, channel: 'xiaohongshu', handle: 'linzi_daily', account_url: 'https://www.xiaohongshu.com/user/profile/linzi_daily', followers: 128000, unit_price: 320000, contact_status: 'active' },
+      { id: 2, channel: 'dianping', handle: 'momo_foodnote', account_url: null, followers: 56000, unit_price: 210000, contact_status: 'inactive' },
+      { id: 3, channel: 'douyin', handle: 'xiao_homevibe', account_url: 'https://www.douyin.com/user/xiao_homevibe', followers: 201000, unit_price: 410000, contact_status: 'active' },
+    ];
+    return (
+      <div className="p-8">
+        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"><div className="font-semibold">{t('demo.badge')}</div><div>{t('demo.sectionPreview')}</div></div>
+        <div className="flex items-center justify-between mb-6"><h1 className="text-2xl font-bold">{t('influencer.title')}</h1><Link href="/influencers/new" className="bg-black text-white px-4 py-2 rounded">{t('influencer.new')}</Link></div>
+        <form className="mb-4"><input name="q" defaultValue={q ?? ''} placeholder={t('influencer.searchPlaceholder')} className="border rounded p-2 w-64" /></form>
+        <div className="bg-white rounded-lg shadow overflow-x-auto"><table className="w-full text-sm"><thead className="bg-gray-100 text-left"><tr><th className="p-3">{t('influencerForm.channel')}</th><th className="p-3">{t('postForm.handle')}</th><th className="p-3">{t('influencer.account')}</th><th className="p-3">{t('influencer.followers')}</th><th className="p-3">{t('influencerForm.unitPrice')}</th><th className="p-3">{t('influencer.contactStatus')}</th><th className="p-3">{t('schedule.manage')}</th></tr></thead><tbody>{list.map((i: any) => <tr key={i.id} className="border-t"><td className="p-3"><ChannelIcon channel={i.channel} /></td><td className="p-3 font-medium">@{i.handle}</td><td className="p-3">{i.account_url && <a href={i.account_url} target="_blank" className="text-xs bg-blue-50 border border-blue-300 rounded px-2 py-1 text-blue-700 hover:bg-blue-100">{t('influencer.openAccount')}</a>}</td><td className="p-3">{i.followers.toLocaleString()}</td><td className="p-3"><MoneyText value={i.unit_price} suffix=" CNY" /></td><td className="p-3">{contactStatusLabel(i.contact_status, locale)}</td><td className="p-3 space-x-2"><span className="text-blue-600">{t('common.edit')}</span><span className="text-red-500">{t('common.delete')}</span></td></tr>)}</tbody></table></div>
+      </div>
+    );
+  }
+  const sb = await createClient();
+  let query = sb.from('influencers').select('*').order('created_at', { ascending: false });
+  if (q) query = query.ilike('handle', `%${q}%`);
+  const { data: list } = await query;
+
+  return (
+    <div className="p-8">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">{t('influencer.title')}</h1>
+        <Link href="/influencers/new" className="bg-black text-white px-4 py-2 rounded">{t('influencer.new')}</Link>
+      </div>
+
+      <form className="mb-4">
+        <input name="q" defaultValue={q ?? ''} placeholder={t('influencer.searchPlaceholder')} className="border rounded p-2 w-64" />
+      </form>
+
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-100 text-left">
+            <tr>
+              <th className="p-3">{t('influencerForm.channel')}</th>
+              <th className="p-3">{t('postForm.handle')}</th>
+              <th className="p-3">{t('influencer.account')}</th>
+              <th className="p-3">{t('influencer.followers')}</th>
+              <th className="p-3">{t('influencerForm.unitPrice')}</th>
+              <th className="p-3">{t('influencer.contactStatus')}</th>
+              <th className="p-3">{t('schedule.manage')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list?.map((i) => (
+              <tr key={i.id} className="border-t">
+                <td className="p-3"><ChannelIcon channel={i.channel} /></td>
+                <td className="p-3 font-medium">
+                  <Link href={`/influencers/${i.id}`} className="text-blue-600 hover:underline">@{i.handle}</Link>
+                </td>
+                <td className="p-3">
+                  {i.account_url && (
+                    <a href={i.account_url} target="_blank" className="text-xs bg-blue-50 border border-blue-300 rounded px-2 py-1 text-blue-700 hover:bg-blue-100">
+                      {t('influencer.openAccount')}
+                    </a>
+                  )}
+                </td>
+                <td className="p-3">{i.followers?.toLocaleString()}</td>
+                <td className="p-3"><MoneyText value={i.unit_price} suffix=" CNY" /></td>
+                <td className="p-3">{contactStatusLabel(i.contact_status, locale)}</td>
+                <td className="p-3 space-x-2">
+                  <Link href={`/influencers/${i.id}/edit`} className="text-blue-600">{t('common.edit')}</Link>
+                  <form action={async () => { 'use server'; await deleteInfluencerAction(i.id); }} className="inline">
+                    <button className="text-red-500">{t('common.delete')}</button>
+                  </form>
+                </td>
+              </tr>
+            ))}
+            {!list?.length && (
+              <tr><td colSpan={6} className="p-8 text-center text-gray-400">{t('influencer.none')}</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

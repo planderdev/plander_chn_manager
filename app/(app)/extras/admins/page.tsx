@@ -1,0 +1,202 @@
+import { createClient } from '@/lib/supabase/server';
+import { createAdminAction } from '@/actions/admins';
+import PhoneInput from '@/components/PhoneInput';
+import SubmitButton from '@/components/SubmitButton';
+import { saveApifyTokenAction, getApifyTokenStatus, saveExchangeRateAction } from '@/actions/settings';
+import { syncAllPosts } from '@/actions/sync-metrics';
+import { revalidatePath } from 'next/cache';
+import Link from 'next/link';
+import { deleteAdminAction } from '@/actions/admins';
+import { getI18n } from '@/lib/i18n/server';
+import { hasSupabaseEnv } from '@/lib/env';
+import { DEFAULT_CNY_TO_KRW_RATE, formatExchangePolicy } from '@/lib/exchange-rate';
+
+export default async function AdminsPage() {
+  const { locale, t } = await getI18n();
+  if (!hasSupabaseEnv()) {
+    const admins = [
+      { id: '1', name: 'Mina', company: 'Plander China', title: 'Lead', email: 'mina@plander.cn', phone: '138-0000-1200', created_at: '2026-04-01' },
+      { id: '2', name: 'Leo', company: 'Plander China', title: 'Ops', email: 'leo@plander.cn', phone: '139-3333-8800', created_at: '2026-04-07' },
+    ];
+    const exchangeRate = DEFAULT_CNY_TO_KRW_RATE;
+    return (
+      <div className="p-4 md:p-8 space-y-8">
+        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"><div className="font-semibold">{t('demo.badge')}</div><div>{t('demo.sectionPreview')}</div></div>
+        <h1 className="text-2xl font-bold">{t('admin.title')}</h1>
+        <section><h2 className="text-lg font-semibold mb-3">{t('admin.new')}</h2><form className="bg-white p-6 rounded-lg shadow space-y-4 max-w-2xl"><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><F name="name" label={t('admin.name')} required /><F name="company" label={t('admin.company')} /><F name="title" label={t('admin.jobTitle')} /><div><label className="text-sm block mb-1 font-medium">{t('common.phone')}</label><PhoneInput name="phone" /></div><F name="email" label={t('admin.emailLogin')} type="email" required /><F name="password" label={t('admin.passwordMin')} type="password" required /></div><SubmitButton>{t('common.create')}</SubmitButton></form></section>
+        <section><h2 className="text-lg font-semibold mb-3">{t('admin.list')}</h2><div className="bg-white rounded-lg shadow overflow-x-auto"><table className="w-full text-sm min-w-[600px]"><thead className="bg-gray-100 text-left"><tr><th className="p-3">{t('sales.owner')}</th><th className="p-3">{t('admin.company')}</th><th className="p-3">{t('admin.jobTitle')}</th><th className="p-3">{t('common.email')}</th><th className="p-3">{t('common.phone')}</th><th className="p-3">{t('common.createdAt')}</th><th className="p-3">{t('common.management')}</th></tr></thead><tbody>{admins.map((a: any) => <tr key={a.id} className="border-t"><td className="p-3 font-medium">{a.name}</td><td className="p-3">{a.company}</td><td className="p-3">{a.title}</td><td className="p-3">{a.email}</td><td className="p-3">{a.phone}</td><td className="p-3">{new Date(a.created_at).toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'ko-KR')}</td><td className="p-3 space-x-2"><span className="text-blue-600">{t('common.edit')}</span><span className="text-red-500">{t('common.delete')}</span></td></tr>)}</tbody></table></div></section>
+        <section><h2 className="text-lg font-semibold mb-3">{t('admin.exchangeSettings')}</h2><div className="bg-white p-6 rounded-lg shadow space-y-4 max-w-2xl"><div className="text-sm text-gray-700"><p>{t('admin.exchangeDescription')}</p><p className="text-xs text-gray-500 mt-1">{t('admin.exchangeHelp')}</p></div><div className="text-sm">{t('admin.exchangePreview', { value: formatExchangePolicy(exchangeRate) })}</div><div><label className="text-sm block mb-1 font-medium">{t('admin.exchangeRateLabel')}</label><input defaultValue={exchangeRate} disabled className="w-full border border-gray-300 rounded p-2 bg-gray-100" /></div></div></section>
+      </div>
+    );
+  }
+  const sb = await createClient();
+  const { data: admins } = await sb.from('admins').select('*').order('created_at', { ascending: false });
+  const tokenStatus = await getApifyTokenStatus();
+  const [{ data: actorRow }, { data: exchangeRow }] = await Promise.all([
+    sb.from('app_settings').select('value').eq('key', 'apify_actor_id').single(),
+    sb.from('app_settings').select('value').eq('key', 'cny_to_krw_rate').single(),
+  ]);
+  const actorId = actorRow?.value ?? '';
+  const exchangeRate = Number(exchangeRow?.value) > 0 ? Number(exchangeRow?.value) : DEFAULT_CNY_TO_KRW_RATE;
+
+  return (
+    <div className="p-4 md:p-8 space-y-8">
+      <h1 className="text-2xl font-bold">{t('admin.title')}</h1>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-3">{t('admin.new')}</h2>
+        <form action={createAdminAction} className="bg-white p-6 rounded-lg shadow space-y-4 max-w-2xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <F name="name" label={t('admin.name')} required />
+            <F name="company" label={t('admin.company')} />
+            <F name="title" label={t('admin.jobTitle')} />
+            <div>
+              <label className="text-sm block mb-1 font-medium">{t('common.phone')}</label>
+              <PhoneInput name="phone" />
+            </div>
+            <F name="email" label={t('admin.emailLogin')} type="email" required />
+            <F name="password" label={t('admin.passwordMin')} type="password" required />
+          </div>
+          <SubmitButton>{t('common.create')}</SubmitButton>
+        </form>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-3">{t('admin.list')}</h2>
+        <div className="bg-white rounded-lg shadow overflow-x-auto">
+          <table className="w-full text-sm min-w-[600px]">
+            <thead className="bg-gray-100 text-left">
+              <tr>
+                <th className="p-3">{t('sales.owner')}</th>
+                <th className="p-3">{t('admin.company')}</th>
+                <th className="p-3">{t('admin.jobTitle')}</th>
+                <th className="p-3">{t('common.email')}</th>
+                <th className="p-3">{t('common.phone')}</th>
+                <th className="p-3">{t('common.createdAt')}</th>
+                <th className="p-3">{t('common.management')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {admins?.map((a: any) => (
+                <tr key={a.id} className="border-t">
+                  <td className="p-3 font-medium">{a.name}</td>
+                  <td className="p-3">{a.company ?? '-'}</td>
+                  <td className="p-3">{a.title ?? '-'}</td>
+                  <td className="p-3">{a.email}</td>
+                  <td className="p-3">{a.phone ?? '-'}</td>
+                  <td className="p-3">{new Date(a.created_at).toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'ko-KR')}</td>
+                  <td className="p-3 space-x-2">
+                    <Link href={`/extras/admins/${a.id}`} className="text-blue-600">{t('common.edit')}</Link>
+                    <form action={async () => {
+                      'use server';
+                      await deleteAdminAction(a.id);
+                    }} className="inline">
+                      <button className="text-red-500"
+                        formAction={async () => { 'use server'; await deleteAdminAction(a.id); }}>
+                        {t('common.delete')}
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section>
+        <h2 className="text-lg font-semibold mb-3">{t('admin.apifySettings')}</h2>
+        <div className="bg-white p-6 rounded-lg shadow space-y-4 max-w-2xl">
+          <div className="text-sm text-gray-700">
+            <p>{t('admin.apifyDescription')}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {t('admin.apifyHelp')}
+            </p>
+          </div>
+      
+          <div className="text-sm">
+            {t('common.currentStatus')}: {tokenStatus.hasToken
+              ? <span className="text-green-600 font-semibold">{t('common.connected')} ({tokenStatus.masked})</span>
+              : <span className="text-orange-600 font-semibold">{t('common.notConnected')} ({t('common.mockMode')})</span>}
+          </div>
+      
+          <form action={saveApifyTokenAction} className="space-y-3">
+            <div>
+              <label className="text-sm block mb-1 font-medium">Apify API Token</label>
+              <input type="password" name="apify_token"
+                placeholder={tokenStatus.hasToken ? t('admin.tokenPlaceholder') : 'apify_api_xxxxxxxx'}
+                className="w-full border border-gray-400 rounded p-2" />
+            </div>
+            <div>
+              <label className="text-sm block mb-1 font-medium">Apify Actor ID</label>
+              <input name="apify_actor_id" defaultValue={actorId ?? 'apify~instagram-post-scraper'}
+                placeholder="apify~instagram-post-scraper"
+                className="w-full border border-gray-400 rounded p-2" />
+            </div>
+            <SubmitButton>{t('common.save')}</SubmitButton>
+          </form>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-3">{t('admin.exchangeSettings')}</h2>
+        <div className="bg-white p-6 rounded-lg shadow space-y-4 max-w-2xl">
+          <div className="text-sm text-gray-700">
+            <p>{t('admin.exchangeDescription')}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {t('admin.exchangeHelp')}
+            </p>
+          </div>
+
+          <div className="text-sm">
+            {t('admin.exchangePreview', { value: formatExchangePolicy(exchangeRate) })}
+          </div>
+
+          <form action={saveExchangeRateAction} className="space-y-3">
+            <div>
+              <label className="text-sm block mb-1 font-medium">{t('admin.exchangeRateLabel')}</label>
+              <input
+                type="number"
+                name="cny_to_krw_rate"
+                min="1"
+                step="1"
+                defaultValue={exchangeRate}
+                className="w-full border border-gray-400 rounded p-2"
+              />
+            </div>
+            <SubmitButton>{t('common.save')}</SubmitButton>
+          </form>
+        </div>
+      </section>
+      
+      <section>
+        <h2 className="text-lg font-semibold mb-3">{t('admin.metricsSync')}</h2>
+        <div className="bg-white p-6 rounded-lg shadow space-y-4 max-w-2xl">
+          <div className="text-sm text-gray-700">
+            <p>{t('admin.syncTarget')}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {t('admin.syncHelp')}
+            </p>
+          </div>
+          <form action={async () => {
+            'use server';
+            const result = await syncAllPosts();
+            console.log('[sync result]', result);
+            revalidatePath('/influencers/posts');
+          }}>
+            <SubmitButton>{t('admin.syncNow')}</SubmitButton>
+          </form>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function F({ name, label, type = 'text', required }: any) {
+  return (
+    <div>
+      <label className="text-sm block mb-1 font-medium">{label}</label>
+      <input name={name} type={type} required={required}
+        className="w-full border border-gray-400 rounded p-2" />
+    </div>
+  );
+}
