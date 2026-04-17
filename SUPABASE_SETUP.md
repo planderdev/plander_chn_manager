@@ -13,7 +13,15 @@
 ## 2. SQL 실행
 
 - Supabase SQL Editor 열기
-- [SUPABASE_SETUP.sql](/Users/insung/Dev/plander_chn_manager/SUPABASE_SETUP.sql) 전체 실행
+- 한 번에 붙여넣기가 되면 [SUPABASE_SETUP.sql](/Users/insung/Dev/plander_chn_manager/SUPABASE_SETUP.sql) 전체 실행
+- 줄 수 제한이 있으면 아래 3개를 순서대로 실행
+  - [SUPABASE_SETUP_PART1.sql](/Users/insung/Dev/plander_chn_manager/SUPABASE_SETUP_PART1.sql)
+  - [SUPABASE_SETUP_PART2.sql](/Users/insung/Dev/plander_chn_manager/SUPABASE_SETUP_PART2.sql)
+  - [SUPABASE_SETUP_PART3.sql](/Users/insung/Dev/plander_chn_manager/SUPABASE_SETUP_PART3.sql)
+
+주의:
+- 원본 `SUPABASE_SETUP.sql`은 `begin; ... commit;` 구조라서 중간까지만 실행하면 생성이 반영되지 않을 수 있습니다.
+- 붙여넣기 제한이 있으면 반드시 `PART1 -> PART2 -> PART3` 순서로 실행하세요.
 
 이 SQL에는 아래가 포함되어 있습니다.
 

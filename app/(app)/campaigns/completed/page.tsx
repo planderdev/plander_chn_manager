@@ -78,7 +78,7 @@ export default async function CompletedPage({
                 <td className="p-3">{p.likes?.toLocaleString()}</td>
                 <td className="p-3">{p.comments?.toLocaleString()}</td>
                 <td className="p-3">{p.shares?.toLocaleString()}</td>
-                <td className="p-3"><MoneyText value={p.unit_price} suffix=" CNY" /></td>
+                <td className="p-3"><MoneyText value={p.influencers?.unit_price} suffix=" CNY" /></td>
                 <td className="p-3">
                   <span className={p.settlement_status === 'done' ? 'text-green-600' : 'text-orange-500'}>
                     {p.settlement_status === 'done' ? t('dashboard.done') : t('postForm.pending')}
