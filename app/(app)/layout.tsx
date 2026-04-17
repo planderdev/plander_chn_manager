@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { signOutAction } from '@/actions/auth';
 import Sidebar from '@/components/Sidebar';
 import { PresentationProvider } from '@/lib/presentation-context';
-import { hasSupabaseEnv } from '@/lib/env';
 
 import type { Metadata } from "next";
 
@@ -16,18 +15,6 @@ export const metadata: Metadata = {
 };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabaseReady = hasSupabaseEnv();
-  if (!supabaseReady) {
-    return (
-      <PresentationProvider>
-        <div className="min-h-screen md:flex">
-          <Sidebar userName="Demo Preview" demoMode />
-          <main className="flex-1 bg-gray-50 min-w-0">{children}</main>
-        </div>
-      </PresentationProvider>
-    );
-  }
-
   const sb = await createClient();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) redirect('/login');

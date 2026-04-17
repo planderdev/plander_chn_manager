@@ -12,15 +12,10 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const router = useRouter();
   const { locale, setLocale, t } = useI18n();
-  const demoMode = !(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (demoMode) {
-      router.push('/dashboard');
-      return;
-    }
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) setError(error.message);
@@ -48,12 +43,6 @@ export default function LoginPage() {
         </div>
         <form onSubmit={handleLogin} className="bg-white p-8 rounded-lg shadow-md w-full space-y-4">
         <h1 className="text-2xl font-bold text-center">{t('login.title')}</h1>
-        {demoMode && (
-          <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            <div className="font-medium">{t('demo.badge')}</div>
-            <div>{t('login.demoHint')}</div>
-          </div>
-        )}
         <input
           type="email" placeholder={t('login.email')} value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -65,18 +54,9 @@ export default function LoginPage() {
           className="w-full border rounded p-2" required
         />
         {error && <p className="text-red-500 text-sm">{error}</p>}
-        {demoMode ? (
-          <Link
-            href="/dashboard"
-            className="block w-full bg-black text-white py-2 rounded hover:bg-gray-800 text-center"
-          >
-            {t('login.demoEnter')}
-          </Link>
-        ) : (
-          <button type="submit" className="w-full bg-black text-white py-2 rounded hover:bg-gray-800">
-            {t('login.submit')}
-          </button>
-        )}
+        <button type="submit" className="w-full bg-black text-white py-2 rounded hover:bg-gray-800">
+          {t('login.submit')}
+        </button>
         </form>
       </div>
     </div>

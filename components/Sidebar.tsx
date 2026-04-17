@@ -8,8 +8,8 @@ import { useI18n } from '@/lib/i18n/provider';
 import { usePresentation } from '@/lib/presentation-context';
 
 export default function Sidebar({
-  userName, signOutAction, demoMode = false,
-}: { userName: string; signOutAction?: () => void; demoMode?: boolean }) {
+  userName, signOutAction,
+}: { userName: string; signOutAction?: () => void }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -100,19 +100,10 @@ export default function Sidebar({
           </button>
         <div className="border-t border-gray-700 pt-3 mt-3 text-xs">
           <div className="px-3 mb-2">{userName}</div>
-          {demoMode && (
-            <div className="px-3 mb-2 text-[11px] text-gray-400">{t('demo.badge')}</div>
-          )}
           <NavLink href="/extras/admins" pathname={pathname} onClick={close}>{t('nav.adminPage')}</NavLink>
-          {demoMode ? (
-            <Link href="/login" className="block w-full text-left px-3 py-2 rounded hover:bg-gray-800">
-              {t('nav.logout')}
-            </Link>
-          ) : (
-            <form action={signOutAction}>
-              <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-800">{t('nav.logout')}</button>
-            </form>
-          )}
+          <form action={signOutAction}>
+            <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-800">{t('nav.logout')}</button>
+          </form>
         </div>
       </aside>
     </>

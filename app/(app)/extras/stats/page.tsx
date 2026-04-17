@@ -4,7 +4,6 @@ import { getScheduleStatus } from '@/lib/schedule-status';
 import CollapsibleGroup from '@/components/stats/CollapsibleGroup';
 import HideOnPresentation from '@/components/HideOnPresentation';
 import { getI18n } from '@/lib/i18n/server';
-import { hasSupabaseEnv } from '@/lib/env';
 import { formatExchangePolicy, getCnyToKrwRate } from '@/lib/exchange-rate';
 
 function parseYmd(s?: string) {
@@ -21,19 +20,6 @@ export default async function StatsPage({
   const { client, influencer, from, to } = await searchParams;
   const exchangeRate = await getCnyToKrwRate();
   const exchangePolicy = formatExchangePolicy(exchangeRate);
-  if (!hasSupabaseEnv()) {
-    return (
-      <div className="p-4 md:p-8 space-y-6">
-        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"><div className="font-semibold">{t('demo.badge')}</div><div>{t('demo.sectionPreview')}</div></div>
-        <h1 className="text-2xl font-bold">{t('stats.title')}</h1>
-        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">{t('stats.currencyPolicy', { value: exchangePolicy })}</div>
-        <form className="bg-white p-4 rounded-lg shadow flex flex-wrap gap-3 items-end"><div><label className="text-sm block mb-1 font-medium">{t('common.company')}</label><select defaultValue={client ?? ''} className="border border-gray-400 rounded p-2 text-sm"><option>{t('common.all')}</option><option>Shanghai Bloom Clinic</option></select></div><div><label className="text-sm block mb-1 font-medium">{t('common.influencer')}</label><select defaultValue={influencer ?? ''} className="border border-gray-400 rounded p-2 text-sm"><option>{t('common.all')}</option><option>@linzi_daily</option></select></div><div><label className="text-sm block mb-1 font-medium">{t('common.startDate')}</label><input type="date" defaultValue={from ?? '2026-04-01'} className="border border-gray-400 rounded p-2 text-sm" /></div><div><label className="text-sm block mb-1 font-medium">{t('common.endDate')}</label><input type="date" defaultValue={to ?? '2026-04-30'} className="border border-gray-400 rounded p-2 text-sm" /></div><button className="bg-black text-white px-4 py-2 rounded text-sm">{t('metrics.search')}</button></form>
-        <Group title={t('stats.basic')}><MetricCard label={t('stats.totalClients')} value={24} href="/campaigns/clients" /><MetricCard label={t('stats.totalInfluencers')} value={186} href="/influencers" /><MetricCard label={t('stats.involvedInfluencers')} value={43} href="/campaigns/schedules" /><MetricCard label={t('dashboard.reserved')} value={7} href="/campaigns/schedules" /></Group>
-        <HideOnPresentation><CollapsibleGroup title={t('stats.expense')} defaultOpen={false}><MetricCard label={t('stats.totalPaid')} value={12800000} suffix={t('money.won')} href="/influencers/posts" /><MetricCard label={t('stats.totalUnpaid')} value={4600000} suffix={t('money.won')} href="/influencers/posts" /><MetricCard label={t('stats.totalSpend')} value={17400000} suffix={t('money.won')} href="/influencers/posts" /></CollapsibleGroup></HideOnPresentation>
-        <Group title={t('stats.status')}><MetricCard label={t('stats.uploadedPosts')} value={38} href="/campaigns/completed" /><MetricCard label={t('dashboard.uploadPending')} value={12} href="/influencers/posts" /><MetricCard label={t('dashboard.settlementPending')} value={9} href="/influencers/posts" /><MetricCard label={t('dashboard.done')} value={38} href="/campaigns/completed" /></Group>
-      </div>
-    );
-  }
   const sb = await createClient();
 
   const [{ data: clients }, { data: influencers }] = await Promise.all([

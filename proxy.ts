@@ -1,35 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { hasSupabaseEnv } from '@/lib/env';
 
 export default async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  const supabaseReady = hasSupabaseEnv();
-
-  // Allow the shell UI to render before the new Supabase project is connected.
-  if (!supabaseReady) {
-    const demoAllowedPaths = new Set([
-      '/login',
-      '/dashboard',
-      '/sales',
-      '/campaigns/clients',
-      '/campaigns/schedules',
-      '/campaigns/completed',
-      '/influencers',
-      '/influencers/posts',
-      '/extras/stats',
-      '/extras/reports',
-      '/extras/admins',
-    ]);
-
-    if (path === '/') {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-    if (!demoAllowedPaths.has(path)) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-    return NextResponse.next({ request });
-  }
 
   let response = NextResponse.next({ request });
 

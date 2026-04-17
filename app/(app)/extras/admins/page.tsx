@@ -8,27 +8,10 @@ import { revalidatePath } from 'next/cache';
 import Link from 'next/link';
 import { deleteAdminAction } from '@/actions/admins';
 import { getI18n } from '@/lib/i18n/server';
-import { hasSupabaseEnv } from '@/lib/env';
 import { DEFAULT_CNY_TO_KRW_RATE, formatExchangePolicy } from '@/lib/exchange-rate';
 
 export default async function AdminsPage() {
   const { locale, t } = await getI18n();
-  if (!hasSupabaseEnv()) {
-    const admins = [
-      { id: '1', name: 'Mina', company: 'Plander China', title: 'Lead', email: 'mina@plander.cn', phone: '138-0000-1200', created_at: '2026-04-01' },
-      { id: '2', name: 'Leo', company: 'Plander China', title: 'Ops', email: 'leo@plander.cn', phone: '139-3333-8800', created_at: '2026-04-07' },
-    ];
-    const exchangeRate = DEFAULT_CNY_TO_KRW_RATE;
-    return (
-      <div className="p-4 md:p-8 space-y-8">
-        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"><div className="font-semibold">{t('demo.badge')}</div><div>{t('demo.sectionPreview')}</div></div>
-        <h1 className="text-2xl font-bold">{t('admin.title')}</h1>
-        <section><h2 className="text-lg font-semibold mb-3">{t('admin.new')}</h2><form className="bg-white p-6 rounded-lg shadow space-y-4 max-w-2xl"><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><F name="name" label={t('admin.name')} required /><F name="company" label={t('admin.company')} /><F name="title" label={t('admin.jobTitle')} /><div><label className="text-sm block mb-1 font-medium">{t('common.phone')}</label><PhoneInput name="phone" /></div><F name="email" label={t('admin.emailLogin')} type="email" required /><F name="password" label={t('admin.passwordMin')} type="password" required /></div><SubmitButton>{t('common.create')}</SubmitButton></form></section>
-        <section><h2 className="text-lg font-semibold mb-3">{t('admin.list')}</h2><div className="bg-white rounded-lg shadow overflow-x-auto"><table className="w-full text-sm min-w-[600px]"><thead className="bg-gray-100 text-left"><tr><th className="p-3">{t('sales.owner')}</th><th className="p-3">{t('admin.company')}</th><th className="p-3">{t('admin.jobTitle')}</th><th className="p-3">{t('common.email')}</th><th className="p-3">{t('common.phone')}</th><th className="p-3">{t('common.createdAt')}</th><th className="p-3">{t('common.management')}</th></tr></thead><tbody>{admins.map((a: any) => <tr key={a.id} className="border-t"><td className="p-3 font-medium">{a.name}</td><td className="p-3">{a.company}</td><td className="p-3">{a.title}</td><td className="p-3">{a.email}</td><td className="p-3">{a.phone}</td><td className="p-3">{new Date(a.created_at).toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'ko-KR')}</td><td className="p-3 space-x-2"><span className="text-blue-600">{t('common.edit')}</span><span className="text-red-500">{t('common.delete')}</span></td></tr>)}</tbody></table></div></section>
-        <section><h2 className="text-lg font-semibold mb-3">{t('admin.exchangeSettings')}</h2><div className="bg-white p-6 rounded-lg shadow space-y-4 max-w-2xl"><div className="text-sm text-gray-700"><p>{t('admin.exchangeDescription')}</p><p className="text-xs text-gray-500 mt-1">{t('admin.exchangeHelp')}</p></div><div className="text-sm">{t('admin.exchangePreview', { value: formatExchangePolicy(exchangeRate) })}</div><div><label className="text-sm block mb-1 font-medium">{t('admin.exchangeRateLabel')}</label><input defaultValue={exchangeRate} disabled className="w-full border border-gray-300 rounded p-2 bg-gray-100" /></div></div></section>
-      </div>
-    );
-  }
   const sb = await createClient();
   const { data: admins } = await sb.from('admins').select('*').order('created_at', { ascending: false });
   const tokenStatus = await getApifyTokenStatus();

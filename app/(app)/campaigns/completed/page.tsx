@@ -2,27 +2,12 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import MoneyText from '@/components/MoneyText';
 import { getI18n } from '@/lib/i18n/server';
-import { hasSupabaseEnv } from '@/lib/env';
 
 export default async function CompletedPage({
   searchParams,
 }: { searchParams: Promise<{ handle?: string; company?: string }> }) {
   const { t } = await getI18n();
   const { handle, company } = await searchParams;
-  if (!hasSupabaseEnv()) {
-    const posts = [
-      { id: 1, clients: { company_name: 'Shanghai Bloom Clinic' }, influencers: { handle: 'linzi_daily', account_url: 'https://www.xiaohongshu.com/user/profile/linzi_daily' }, post_url: 'https://www.xiaohongshu.com/explore/mock-1', views: 120000, likes: 6400, comments: 420, shares: 160, unit_price: 320000, settlement_status: 'done', settled_on: '2026-04-15' },
-      { id: 2, clients: { company_name: 'Hangzhou Skin Studio' }, influencers: { handle: 'xiao_homevibe', account_url: 'https://www.douyin.com/user/xiao_homevibe' }, post_url: 'https://www.douyin.com/video/mock', views: 86000, likes: 5200, comments: 280, shares: 210, unit_price: 410000, settlement_status: 'pending', settled_on: null },
-    ];
-    return (
-      <div className="p-4 md:p-8">
-        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"><div className="font-semibold">{t('demo.badge')}</div><div>{t('demo.sectionPreview')}</div></div>
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-2"><h1 className="text-2xl font-bold">{t('completed.title')}</h1><Link href="/influencers/posts/metrics" className="border border-gray-400 px-4 py-2 rounded text-sm hover:bg-gray-100">{t('completed.metricsEntry')}</Link></div>
-        <form className="mb-4 flex flex-wrap gap-2"><input name="handle" defaultValue={handle ?? ''} placeholder={t('completed.handlePlaceholder')} className="border border-gray-400 rounded p-2 text-sm" /><input name="company" defaultValue={company ?? ''} placeholder={t('completed.companyPlaceholder')} className="border border-gray-400 rounded p-2 text-sm" /><button className="bg-black text-white px-4 py-2 rounded text-sm">{t('completed.search')}</button></form>
-        <div className="bg-white rounded-lg shadow overflow-x-auto"><table className="w-full text-sm min-w-[1000px]"><thead className="bg-gray-100 text-left"><tr><th className="p-3">{t('common.companyName')}</th><th className="p-3">{t('common.influencer')}</th><th className="p-3">{t('schedule.accountLink')}</th><th className="p-3">{t('common.post')}</th><th className="p-3">{t('report.totalViews')}</th><th className="p-3">{t('report.totalLikes')}</th><th className="p-3">{t('report.totalComments')}</th><th className="p-3">{t('report.totalShares')}</th><th className="p-3">{t('influencerForm.unitPrice')}</th><th className="p-3">{t('postForm.settlementStatus')}</th><th className="p-3">{t('postForm.settledOn')}</th></tr></thead><tbody>{posts.map((p: any) => <tr key={p.id} className="border-t"><td className="p-3">{p.clients.company_name}</td><td className="p-3">@{p.influencers.handle}</td><td className="p-3"><a href={p.influencers.account_url} target="_blank" className="text-blue-600 hover:underline">{t('common.link')}</a></td><td className="p-3"><a href={p.post_url} target="_blank" className="text-blue-600 hover:underline">{t('common.link')}</a></td><td className="p-3">{p.views.toLocaleString()}</td><td className="p-3">{p.likes.toLocaleString()}</td><td className="p-3">{p.comments.toLocaleString()}</td><td className="p-3">{p.shares.toLocaleString()}</td><td className="p-3"><MoneyText value={p.unit_price} suffix=" CNY" /></td><td className="p-3"><span className={p.settlement_status === 'done' ? 'text-green-600' : 'text-orange-500'}>{p.settlement_status === 'done' ? t('dashboard.done') : t('postForm.pending')}</span></td><td className="p-3">{p.settled_on?.replaceAll('-', '/') ?? '-'}</td></tr>)}</tbody></table></div>
-      </div>
-    );
-  }
   const sb = await createClient();
 
   let q = sb.from('posts')
