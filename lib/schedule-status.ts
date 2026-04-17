@@ -3,17 +3,21 @@ import { translate } from '@/lib/i18n/config';
 
 export type ScheduleStatus = 'reserved' | 'upload_pending' | 'settlement_pending' | 'done';
 
+type SchedulePost = { post_url?: string | null; settlement_status?: string | null };
+
 export function getScheduleStatus(
   scheduledAt: string,
-  posts: { post_url?: string | null; settlement_status?: string | null }[] | null | undefined
+  posts: SchedulePost[] | SchedulePost | null | undefined
 ): ScheduleStatus {
   const isPast = new Date(scheduledAt) < new Date();
   if (!isPast) return 'reserved';
 
-  const hasUrl = posts?.some(p => p.post_url && p.post_url.trim() !== '') ?? false;
+  const postList = Array.isArray(posts) ? posts : posts ? [posts] : [];
+
+  const hasUrl = postList.some(p => p.post_url && p.post_url.trim() !== '');
   if (!hasUrl) return 'upload_pending';
 
-  const hasSettled = posts?.some(p => p.settlement_status === 'done') ?? false;
+  const hasSettled = postList.some(p => p.settlement_status === 'done');
   if (!hasSettled) return 'settlement_pending';
 
   return 'done';
