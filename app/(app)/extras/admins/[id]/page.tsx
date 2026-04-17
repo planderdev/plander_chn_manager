@@ -39,6 +39,16 @@ export default async function EditAdminPage({ params }: { params: Promise<{ id: 
             <label className="text-sm block mb-1 font-medium">{t('admin.emailReadonly')}</label>
             <input value={admin.email} disabled className="w-full border border-gray-300 rounded p-2 bg-gray-100" />
           </div>
+          <div className="md:col-span-2">
+            <label className="text-sm block mb-1 font-medium">{t('admin.newPasswordOptional')}</label>
+            <input
+              name="password"
+              type="password"
+              placeholder={t('admin.passwordEditPlaceholder')}
+              className="w-full border border-gray-400 rounded p-2"
+            />
+            <p className="mt-1 text-xs text-gray-500">{t('admin.passwordEditHelp')}</p>
+          </div>
         </div>
         <div className="flex gap-3">
           <SubmitButton>{t('common.save')}</SubmitButton>

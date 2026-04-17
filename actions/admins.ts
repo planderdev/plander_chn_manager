@@ -49,9 +49,11 @@ if (error) {
 
 export async function updateAdminAction(fd: FormData) {
   const id = String(fd.get('id'));
+  const password = String(fd.get('password') || '');
   const sb = await createClient();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) throw new Error('Unauthorized');
+  if (password && password.length < 6) throw new Error('비밀번호는 최소 6자');
 
   const payload = {
     name: String(fd.get('name') || ''),
@@ -63,7 +65,18 @@ export async function updateAdminAction(fd: FormData) {
   const { error } = await sb.from('admins').update(payload).eq('id', id);
   if (error) throw new Error(error.message);
 
+  if (password) {
+    const adminSb = createSbClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+    const { error: authError } = await adminSb.auth.admin.updateUserById(id, { password });
+    if (authError) throw new Error(authError.message);
+  }
+
   revalidatePath('/extras/admins');
+  revalidatePath(`/extras/admins/${id}`);
   redirect('/extras/admins');
 }
 
