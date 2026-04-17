@@ -1,9 +1,11 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useI18n } from '@/lib/i18n/provider';
 import { localeLabels } from '@/lib/i18n/config';
+
+const REMEMBERED_EMAIL_KEY = 'plander-remembered-email';
 
 export default function LoginPage() {
   const formRef = useRef<HTMLFormElement>(null);
@@ -11,8 +13,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rememberEmail, setRememberEmail] = useState(false);
   const router = useRouter();
   const { locale, setLocale, t } = useI18n();
+
+  useEffect(() => {
+    const savedEmail = window.localStorage.getItem(REMEMBERED_EMAIL_KEY);
+    if (!savedEmail) return;
+    setEmail(savedEmail);
+    setRememberEmail(true);
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -26,6 +36,8 @@ export default function LoginPage() {
       setIsSubmitting(false);
       return;
     }
+    if (rememberEmail) window.localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+    else window.localStorage.removeItem(REMEMBERED_EMAIL_KEY);
     router.push('/dashboard');
   }
 
@@ -57,17 +69,27 @@ export default function LoginPage() {
         <form ref={formRef} onSubmit={handleLogin} className="bg-white p-8 rounded-lg shadow-md w-full space-y-4">
         <h1 className="text-2xl font-bold text-center">{t('login.title')}</h1>
         <input
-          type="email" placeholder={t('login.email')} value={email}
+          type="email" name="email" placeholder={t('login.email')} value={email}
           onChange={(e) => setEmail(e.target.value)}
           onKeyDown={handleEnterSubmit}
+          autoComplete="email"
           className="w-full border rounded p-2" required
         />
         <input
-          type="password" placeholder={t('login.password')} value={password}
+          type="password" name="password" placeholder={t('login.password')} value={password}
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={handleEnterSubmit}
+          autoComplete="current-password"
           className="w-full border rounded p-2" required
         />
+        <label className="flex items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={rememberEmail}
+            onChange={(e) => setRememberEmail(e.target.checked)}
+          />
+          <span>{t('login.rememberEmail')}</span>
+        </label>
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <button
           type="submit"
