@@ -8,6 +8,15 @@ export type ClientStatus =
 
 export type ChannelType = 'xiaohongshu' | 'dianping' | 'douyin';
 
+export type ProgressStatus =
+  | 'recruiting'
+  | 'recruited'
+  | 'preparing'
+  | 'upload_waiting'
+  | 'uploaded'
+  | 'delayed'
+  | 'canceled';
+
 export interface Client {
   id: number;
   company_name: string;
@@ -18,6 +27,7 @@ export interface Client {
   contract_start: string | null;
   contract_end: string | null;
   contract_amount: number | null;
+  monthly_management_fee: number | null;
   memo: string | null;
   manager_id: string | null;
   manager_name: string | null;
@@ -62,9 +72,10 @@ export interface Influencer {
 
 export interface Schedule {
   id: number;
-  scheduled_at: string;
+  scheduled_at: string | null;
   client_id: number;
   influencer_id: number;
+  progress_status: ProgressStatus;
   memo: string | null;
   created_at: string;
   clients?: { company_name: string };

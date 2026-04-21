@@ -72,6 +72,7 @@ create table if not exists public.clients (
   contract_start date,
   contract_end date,
   contract_amount numeric(14, 2),
+  monthly_management_fee numeric(14, 2),
   memo text,
   manager_id uuid references public.admins (id) on delete set null,
   manager_name text,

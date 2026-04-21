@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import MoneyText from '@/components/MoneyText';
 import { getI18n } from '@/lib/i18n/server';
 
 export default async function CompletedPage({
@@ -11,7 +10,7 @@ export default async function CompletedPage({
   const sb = await createClient();
 
   let q = sb.from('posts')
-    .select('*, clients(company_name), influencers(handle, account_url, unit_price, name_en, bank_name, branch_name, account_number, phone, prefecture, city, street)')
+    .select('*, clients(company_name), influencers(handle, account_url, name_en, bank_name, branch_name, account_number, phone, prefecture, city, street)')
     .not('post_url', 'is', null)
     .order('updated_at', { ascending: false });
 
@@ -41,7 +40,7 @@ export default async function CompletedPage({
       </form>
 
       <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="w-full text-sm min-w-[1000px]">
+        <table className="w-full text-sm min-w-[850px]">
           <thead className="bg-gray-100 text-left">
             <tr>
               <th className="p-3">{t('common.companyName')}</th>
@@ -52,9 +51,6 @@ export default async function CompletedPage({
               <th className="p-3">{t('report.totalLikes')}</th>
               <th className="p-3">{t('report.totalComments')}</th>
               <th className="p-3">{t('report.totalShares')}</th>
-              <th className="p-3">{t('influencerForm.unitPrice')}</th>
-              <th className="p-3">{t('postForm.settlementStatus')}</th>
-              <th className="p-3">{t('postForm.settledOn')}</th>
             </tr>
           </thead>
           <tbody>
@@ -78,17 +74,10 @@ export default async function CompletedPage({
                 <td className="p-3">{p.likes?.toLocaleString()}</td>
                 <td className="p-3">{p.comments?.toLocaleString()}</td>
                 <td className="p-3">{p.shares?.toLocaleString()}</td>
-                <td className="p-3"><MoneyText value={p.influencers?.unit_price} suffix=" CNY" /></td>
-                <td className="p-3">
-                  <span className={p.settlement_status === 'done' ? 'text-green-600' : 'text-orange-500'}>
-                    {p.settlement_status === 'done' ? t('dashboard.done') : t('postForm.pending')}
-                  </span>
-                </td>
-                <td className="p-3">{p.settled_on?.replaceAll('-', '/') ?? '-'}</td>
               </tr>
             ))}
             {!posts.length && (
-              <tr><td colSpan={10} className="p-8 text-center text-gray-400">{t('completed.none')}</td></tr>
+              <tr><td colSpan={8} className="p-8 text-center text-gray-400">{t('completed.none')}</td></tr>
             )}
           </tbody>
         </table>

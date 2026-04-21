@@ -33,6 +33,7 @@ export default async function ClientsPage() {
               <th className="p-3">{t('common.status')}</th>
               <th className="p-3">{t('dashboard.contractPeriod')}</th>
               <th className="p-3">{t('clientForm.contractAmount')}</th>
+              <th className="p-3">{t('clientForm.monthlyManagementFee')}</th>
             </tr>
           </thead>
           <tbody>
@@ -48,10 +49,11 @@ export default async function ClientsPage() {
                 <td className="p-3">{clientStatusLabel(c.status, locale)}</td>
                 <td className="p-3">{c.contract_start ?? '-'} ~ {c.contract_end ?? '-'}</td>
                 <td className="p-3"><MoneyText value={c.contract_amount} /></td>
+                <td className="p-3"><MoneyText value={c.monthly_management_fee} /></td>
               </tr>
             ))}
             {!clients?.length && (
-              <tr><td colSpan={6} className="p-8 text-center text-gray-400">{t('client.none')}</td></tr>
+              <tr><td colSpan={7} className="p-8 text-center text-gray-400">{t('client.none')}</td></tr>
             )}
           </tbody>
         </table>

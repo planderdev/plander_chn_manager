@@ -5,8 +5,7 @@ import BackButton from '@/components/BackButton';
 import { fullKR } from '@/lib/datetime';
 import { channelLabel, contactStatusLabel } from '@/lib/labels';
 import ChannelIcon from '@/components/ChannelIcon';
-import { getScheduleStatus, statusLabel, statusColor } from '@/lib/schedule-status';
-import MoneyText from '@/components/MoneyText';
+import { progressStatusColor, progressStatusLabel } from '@/lib/schedule-status';
 import { getI18n } from '@/lib/i18n/server';
 
 export default async function InfluencerDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -31,7 +30,6 @@ export default async function InfluencerDetailPage({ params }: { params: Promise
         <Row label={t('influencerForm.channel')} value={<div className="flex items-center gap-2"><ChannelIcon channel={i.channel} size={22} /><span>{channelLabel(i.channel, locale)}</span></div>} />
         <Row label={t('postForm.handle')} value={`@${i.handle}`} />
         <Row label={t('influencer.followers')} value={i.followers?.toLocaleString() ?? 0} />
-        <Row label={t('influencerForm.unitPrice')} value={<MoneyText value={i.unit_price} suffix=" CNY" />} />
         <Row label={t('postForm.accountLink')} value={
           i.account_url
             ? <a href={i.account_url} target="_blank" className="inline-block bg-blue-50 border border-blue-300 rounded px-3 py-1 text-blue-700 hover:bg-blue-100">{t('influencer.openAccount')}</a>
@@ -42,7 +40,7 @@ export default async function InfluencerDetailPage({ params }: { params: Promise
       </section>
 
       <section className="bg-white rounded-lg shadow p-6 space-y-3">
-        <h2 className="text-sm font-semibold border-b border-gray-300 pb-1">{t('common.settlementInfo')}</h2>
+        <h2 className="text-sm font-semibold border-b border-gray-300 pb-1">{t('common.managementInfo')}</h2>
         <Row label={t('postForm.nameEn')} value={i.name_en ?? '-'} />
         <Row label={t('postForm.bankBranch')} value={[i.bank_name, i.branch_name].filter(Boolean).join(' / ') || '-'} />
         <Row label={t('postForm.accountNumber')} value={i.account_number ?? '-'} />
@@ -58,18 +56,15 @@ export default async function InfluencerDetailPage({ params }: { params: Promise
               <tr><th className="pb-2">{t('schedule.datetime')}</th><th className="pb-2">{t('common.companyName')}</th><th className="pb-2">{t('common.status')}</th></tr>
             </thead>
             <tbody>
-              {schedules.map((s: any) => {
-                const st = getScheduleStatus(s.scheduled_at, s.posts);
-                return (
-                  <tr key={s.id} className="border-t">
-                    <td className="py-2">{fullKR(s.scheduled_at)}</td>
-                    <td className="py-2">{s.clients?.company_name}</td>
-                    <td className="py-2">
-                      <span className={statusColor(st)}>{statusLabel(st, locale)}</span>
-                    </td>
-                  </tr>
-                );
-              })}
+              {schedules.map((s: any) => (
+                <tr key={s.id} className="border-t">
+                  <td className="py-2">{s.scheduled_at ? fullKR(s.scheduled_at) : t('schedule.dateFlexible')}</td>
+                  <td className="py-2">{s.clients?.company_name}</td>
+                  <td className="py-2">
+                    <span className={progressStatusColor(s.progress_status)}>{progressStatusLabel(s.progress_status, locale)}</span>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         ) : <p className="text-gray-400 text-sm">{t('dashboard.noSchedules')}</p>}

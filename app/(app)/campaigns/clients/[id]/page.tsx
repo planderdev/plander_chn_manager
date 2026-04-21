@@ -51,6 +51,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <Row label={t('clientForm.firstContactDate')} value={c.first_contact_date ?? '-'} />
         <Row label={t('clientForm.contractProduct')} value={c.contract_product ?? '-'} />
         <Row label={t('clientForm.contractAmount')} value={<MoneyText value={c.contract_amount} />} />
+        <Row label={t('clientForm.monthlyManagementFee')} value={<MoneyText value={c.monthly_management_fee} />} />
         <Row label={t('dashboard.contractPeriod')} value={`${c.contract_start ?? '-'} ~ ${c.contract_end ?? '-'}`} />
         <Row label={t('clientForm.owner')} value={ownerAdmin?.name ?? t('common.unassigned')} />
       </section>

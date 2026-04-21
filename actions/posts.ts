@@ -43,6 +43,10 @@ export async function upsertPostAction(fd: FormData) {
     }
   }
 
+  if (payload.schedule_id && payload.post_url) {
+    await sb.from('schedules').update({ progress_status: 'uploaded' }).eq('id', payload.schedule_id);
+  }
+
   revalidatePath('/influencers/posts');
   revalidatePath('/campaigns/completed');
   redirect('/influencers/posts');
@@ -57,12 +61,11 @@ export async function deletePostAction(id: number) {
 
 export async function autoCreatePostsFromPastSchedules() {
   const sb = await createClient();
-  const now = new Date().toISOString();
 
-  // 지나간 스케줄 중 posts 연결 없는 것
+  // 중국 버전에서는 날짜보다 상태를 기준으로 게시물 관리 대상을 만듭니다.
   const { data: schedules } = await sb.from('schedules')
     .select('id, client_id, influencer_id, posts(id)')
-    .lt('scheduled_at', now);
+    .in('progress_status', ['upload_waiting', 'uploaded']);
 
   if (!schedules) return { created: 0 };
 

@@ -12,16 +12,7 @@ export default async function PostsPage() {
   const { data: posts } = await sb
     .from('posts')
     .select('*, clients(company_name), influencers(handle)')
-    .order('settlement_status', { ascending: true })  // pending 먼저, done 뒤
     .order('updated_at', { ascending: false });
-    
-  // 정산완료는 뒤로
-  const sortedPosts = (posts ?? []).sort((a: any, b: any) => {
-    const aDone = a.settlement_status === 'done' ? 1 : 0;
-    const bDone = b.settlement_status === 'done' ? 1 : 0;
-    if (aDone !== bDone) return aDone - bDone;
-    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-  });
 
   return (
     <div className="p-4 md:p-8">
@@ -33,20 +24,18 @@ export default async function PostsPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="w-full text-sm min-w-[800px]">
+        <table className="w-full text-sm min-w-[700px]">
           <thead className="bg-gray-100 text-left">
             <tr>
               <th className="p-3">{t('common.companyName')}</th>
               <th className="p-3">{t('common.influencer')}</th>
               <th className="p-3">{t('common.post')}</th>
               <th className="p-3">{t('postForm.uploadedOn')}</th>
-              <th className="p-3">{t('postForm.settlementStatus')}</th>
-              <th className="p-3">{t('postForm.settledOn')}</th>
               <th className="p-3">{t('schedule.manage')}</th>
             </tr>
           </thead>
           <tbody>
-            {sortedPosts.map((p: any) => (
+            {(posts ?? []).map((p: any) => (
               <tr key={p.id} className="border-t">
                 <td className="p-3">{p.clients?.company_name ?? '-'}</td>
                 <td className="p-3">
@@ -60,14 +49,6 @@ export default async function PostsPage() {
                     : <span className="text-gray-400">{t('posts.uploaded')}</span>}
                 </td>
                 <td className="p-3">{p.uploaded_on ?? '-'}</td>
-                <td className="p-3">
-                  <span className={p.settlement_status === 'done' ? 'text-green-600' : 'text-orange-500'}>
-                    {p.settlement_status === 'done' ? t('postForm.done') : t('postForm.pending')}
-                  </span>
-                </td>
-                <td className="p-3">
-                  {p.settled_on ? p.settled_on.replaceAll('-', '/') : '-'}
-                </td>
                 <td className="p-3 space-x-2">
                   <Link href={`/influencers/posts/${p.id}`} className="text-blue-600">{t('common.edit')}</Link>
                   <DeleteButton id={p.id} />
@@ -75,7 +56,7 @@ export default async function PostsPage() {
               </tr>
             ))}
             {!posts?.length && (
-              <tr><td colSpan={8} className="p-8 text-center text-gray-400">{t('posts.none')}</td></tr>
+              <tr><td colSpan={5} className="p-8 text-center text-gray-400">{t('posts.none')}</td></tr>
             )}
           </tbody>
         </table>

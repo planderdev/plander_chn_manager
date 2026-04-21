@@ -4,7 +4,6 @@ import { getScheduleStatus } from '@/lib/schedule-status';
 import CollapsibleGroup from '@/components/stats/CollapsibleGroup';
 import HideOnPresentation from '@/components/HideOnPresentation';
 import { getI18n } from '@/lib/i18n/server';
-import { formatExchangePolicy, getCnyToKrwRate } from '@/lib/exchange-rate';
 
 function parseYmd(s?: string) {
   if (!s) return null;
@@ -18,12 +17,10 @@ export default async function StatsPage({
 }: { searchParams: Promise<{ client?: string; influencer?: string; from?: string; to?: string }> }) {
   const { t } = await getI18n();
   const { client, influencer, from, to } = await searchParams;
-  const exchangeRate = await getCnyToKrwRate();
-  const exchangePolicy = formatExchangePolicy(exchangeRate);
   const sb = await createClient();
 
   const [{ data: clients }, { data: influencers }] = await Promise.all([
-    sb.from('clients').select('id, company_name').order('company_name'),
+    sb.from('clients').select('id, company_name, status, monthly_management_fee').order('company_name'),
     sb.from('influencers').select('id, handle').order('handle'),
   ]);
 
@@ -39,12 +36,13 @@ export default async function StatsPage({
   }
 
   let posts: any[] = [];
-  let reserved = 0, uploadPending = 0, settlementPending = 0, scheduleDone = 0;
+  let reserved = 0, uploadPending = 0, delayed = 0, scheduleDone = 0;
   let involvedInfluencers = 0;  // ← 추가
+  let schedulesData: any[] = [];
 
   if (!rangeError) {
     let q = sb.from('posts')
-      .select('client_id, influencer_id, post_url, views, likes, comments, created_at, settlement_status, influencers(unit_price)');
+      .select('client_id, influencer_id, post_url, views, likes, comments, shares, created_at, settlement_status');
     if (client) q = q.eq('client_id', Number(client));
     if (influencer) q = q.eq('influencer_id', Number(influencer));
     if (fromDate) q = q.gte('created_at', `${fromDate}T00:00:00+09:00`);
@@ -57,14 +55,15 @@ export default async function StatsPage({
     if (influencer) sq = sq.eq('influencer_id', Number(influencer));
     if (fromDate) sq = sq.gte('scheduled_at', `${fromDate}T00:00:00+09:00`);
     if (toDate) sq = sq.lte('scheduled_at', `${toDate}T23:59:59+09:00`);
-    const { data: schedulesData } = await sq;
+    const { data: scheduleRows } = await sq;
+    schedulesData = scheduleRows ?? [];
     
-    for (const s of schedulesData ?? []) {
-      const st = getScheduleStatus(s.scheduled_at, s.posts);
+    for (const s of schedulesData) {
+      const st = getScheduleStatus(s.scheduled_at, s.posts, s.progress_status);
       if (st === 'reserved') reserved++;
       else if (st === 'upload_pending') uploadPending++;
-      else if (st === 'settlement_pending') settlementPending++;
       else if (st === 'done') scheduleDone++;
+      if (s.progress_status === 'delayed') delayed++;
     }
     // 참여 인플루언서: 해당 기간 schedules에 들어간 unique influencer
     const involvedSet = new Set<number>();
@@ -129,13 +128,22 @@ export default async function StatsPage({
   const totalLikes = posts.reduce((a, p) => a + (p.likes ?? 0), 0);
   const totalComments = posts.reduce((a, p) => a + (p.comments ?? 0), 0);
   const totalShares = posts.reduce((a, p) => a + (p.shares ?? 0), 0);
-  const paidTotal = posts
-    .filter((p: any) => p.settlement_status === 'done')
-    .reduce((a, p: any) => a + (p.influencers?.unit_price ?? 0), 0) * exchangeRate;
-  const unpaidTotal = posts
-    .filter((p: any) => p.settlement_status !== 'done')
-    .reduce((a, p: any) => a + (p.influencers?.unit_price ?? 0), 0) * exchangeRate;
-  const grandTotal = paidTotal + unpaidTotal;
+  const expenseClientIds = new Set<number>();
+  if (client) {
+    expenseClientIds.add(Number(client));
+  } else if (influencer) {
+    for (const p of posts) if (p.client_id) expenseClientIds.add(p.client_id);
+    for (const s of schedulesData) if (s.client_id) expenseClientIds.add(s.client_id);
+  }
+  const expenseClients = (clients ?? []).filter((c: any) => {
+    if (expenseClientIds.size > 0) return expenseClientIds.has(c.id);
+    return c.status === 'active';
+  });
+  const startMonth = fromDate ? new Date(`${fromDate}T00:00:00+09:00`) : new Date();
+  const endMonth = toDate ? new Date(`${toDate}T00:00:00+09:00`) : startMonth;
+  const monthCount = Math.max(1, (endMonth.getFullYear() - startMonth.getFullYear()) * 12 + endMonth.getMonth() - startMonth.getMonth() + 1);
+  const monthlyExpense = expenseClients.reduce((a: number, c: any) => a + (c.monthly_management_fee ?? 0), 0);
+  const periodExpense = monthlyExpense * monthCount;
 
   const metrics: { label: string; value: number; href?: string; suffix?: string }[] = [
     { label: t('stats.totalClients'), value: totalClients },
@@ -145,12 +153,11 @@ export default async function StatsPage({
     { label: t('stats.totalLikes'), value: totalLikes },
     { label: t('stats.totalComments'), value: totalComments },
     { label: t('stats.totalViews'), value: totalViews },
-    { label: t('stats.totalPaid'), value: paidTotal, suffix: t('money.won'), href: '/influencers/posts' },
-    { label: t('stats.totalUnpaid'), value: unpaidTotal, suffix: t('money.won'), href: '/influencers/posts' },
-    { label: t('stats.totalSpend'), value: grandTotal, suffix: t('money.won'), href: '/influencers/posts' },
+    { label: t('stats.monthlyExpense'), value: monthlyExpense, suffix: t('money.won'), href: '/campaigns/clients' },
+    { label: t('stats.periodExpense'), value: periodExpense, suffix: t('money.won'), href: '/campaigns/clients' },
     { label: t('dashboard.reserved'), value: reserved, href: '/campaigns/schedules' },
     { label: t('dashboard.uploadPending'), value: uploadPending, href: '/campaigns/schedules' },
-    { label: t('dashboard.settlementPending'), value: settlementPending, href: '/influencers/posts' },
+    { label: t('dashboard.delayed'), value: delayed, href: '/campaigns/schedules' },
     { label: t('dashboard.done'), value: scheduleDone, href: '/campaigns/completed' },
     { label: t('stats.monthViews', { month: thisMonth }), value: tv },
     { label: t('stats.monthLikes', { month: thisMonth }), value: tl },
@@ -161,7 +168,7 @@ export default async function StatsPage({
   return (
     <div className="p-4 md:p-8 space-y-6">
       <h1 className="text-2xl font-bold">{t('stats.title')}</h1>
-      <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">{t('stats.currencyPolicy', { value: exchangePolicy })}</div>
+      <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">{t('stats.expensePolicy')}</div>
 
       <form className="bg-white p-4 rounded-lg shadow flex flex-wrap gap-3 items-end">
         <div>
@@ -202,9 +209,9 @@ export default async function StatsPage({
       {/* 그룹 2: 금액 */}
       <HideOnPresentation>
       <CollapsibleGroup title={t('stats.expense')} defaultOpen={false}>
-        <MetricCard label={t('stats.totalPaid')} value={paidTotal} suffix={t('money.won')} href="/influencers/posts" />
-        <MetricCard label={t('stats.totalUnpaid')} value={unpaidTotal} suffix={t('money.won')} href="/influencers/posts" />
-        <MetricCard label={t('stats.totalSpend')} value={grandTotal} suffix={t('money.won')} href="/influencers/posts" />
+        <MetricCard label={t('stats.monthlyExpense')} value={monthlyExpense} suffix={t('money.won')} href="/campaigns/clients" />
+        <MetricCard label={t('stats.periodExpense')} value={periodExpense} suffix={t('money.won')} href="/campaigns/clients" />
+        <MetricCard label={t('stats.expenseClientCount')} value={expenseClients.length} />
       </CollapsibleGroup>
       </HideOnPresentation>
       
@@ -212,7 +219,7 @@ export default async function StatsPage({
       <Group title={t('stats.status')}>
         <MetricCard label={t('stats.uploadedPosts')} value={uploaded} href="/campaigns/completed" />
         <MetricCard label={t('dashboard.uploadPending')} value={uploadPending} href="/influencers/posts" />
-        <MetricCard label={t('dashboard.settlementPending')} value={settlementPending} href="/influencers/posts" />
+        <MetricCard label={t('dashboard.delayed')} value={delayed} href="/campaigns/schedules" />
         <MetricCard label={t('dashboard.done')} value={scheduleDone} href="/campaigns/completed" />
       </Group>
       

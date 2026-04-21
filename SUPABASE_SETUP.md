@@ -23,6 +23,9 @@
 - 원본 `SUPABASE_SETUP.sql`은 `begin; ... commit;` 구조라서 중간까지만 실행하면 생성이 반영되지 않을 수 있습니다.
 - 붙여넣기 제한이 있으면 반드시 `PART1 -> PART2 -> PART3` 순서로 실행하세요.
 
+이미 이전 버전 SQL로 테이블을 만든 경우:
+- 중국 운영비/진행관리 컬럼을 추가하려면 [SUPABASE_CHINA_MIGRATION.sql](/Users/insung/Dev/plander_chn_manager/SUPABASE_CHINA_MIGRATION.sql) 을 한 번 실행하세요.
+
 이 SQL에는 아래가 포함되어 있습니다.
 
 - 앱이 사용하는 모든 기본 테이블
@@ -82,9 +85,10 @@ SUPABASE_SERVICE_ROLE_KEY=...
 - 관리자 추가 가능
 - 파일 업로드 가능
   - 계약서
-  - 입금 증빙
   - PDF 리포트
-- `/extras/stats`에서 환율 반영 확인
+- 클라이언트 수정 화면에서 `월 운영비` 저장 가능
+- 진행 관리에서 날짜 없이 상태만 저장 가능
+- `/extras/stats`에서 클라이언트별 월 운영비 기준 지출 확인
 
 ## 주의
 

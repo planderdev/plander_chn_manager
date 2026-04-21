@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import { createScheduleAction, updateScheduleAction } from '@/actions/schedules';
 import SubmitButton from '@/components/SubmitButton';
 import { useI18n } from '@/lib/i18n/provider';
+import type { ProgressStatus } from '@/types/db';
 
 type InfOpt = { id: number; handle: string };
 type CliOpt = { id: number; company_name: string };
@@ -13,7 +14,7 @@ export default function ScheduleForm({
   const { t } = useI18n();
   // 수정 모드면 기존 값으로 초기화
   const initInf = schedule ? influencers.find(i => i.id === schedule.influencer_id) ?? null : null;
-  const initDate = schedule ? new Date(schedule.scheduled_at) : null;
+  const initDate = schedule?.scheduled_at ? new Date(schedule.scheduled_at) : null;
   const pad = (n: number) => String(n).padStart(2, '0');
 
   const [query, setQuery] = useState('');
@@ -22,6 +23,7 @@ export default function ScheduleForm({
   const [date, setDate] = useState(initDate ? `${initDate.getFullYear()}-${pad(initDate.getMonth()+1)}-${pad(initDate.getDate())}` : '');
   const [hour, setHour] = useState(initDate ? String(initDate.getHours()) : '10');
   const [minute, setMinute] = useState(initDate ? (initDate.getMinutes() >= 30 ? '30' : '00') : '00');
+  const [progressStatus, setProgressStatus] = useState<ProgressStatus>(schedule?.progress_status ?? 'recruiting');
   const [memo, setMemo] = useState(schedule?.memo ?? '');
 
   const filtered = useMemo(() => {
@@ -30,7 +32,7 @@ export default function ScheduleForm({
   }, [query, influencers]);
 
   const scheduledAt = date && `${date}T${hour.padStart(2,'0')}:${minute}:00+09:00`;
-  const canSubmit = selInf && selCli && date;
+  const progressOptions: ProgressStatus[] = ['recruiting', 'recruited', 'preparing', 'upload_waiting', 'uploaded', 'delayed', 'canceled'];
 
   return (
     <form action={schedule ? updateScheduleAction : createScheduleAction}
@@ -39,6 +41,17 @@ export default function ScheduleForm({
       <input type="hidden" name="scheduled_at" value={scheduledAt || ''} />
       <input type="hidden" name="influencer_id" value={selInf?.id ?? ''} />
       <input type="hidden" name="client_id" value={selCli} />
+
+      <div>
+        <label className="text-sm block mb-1 font-medium">{t('scheduleForm.progressStatus')}</label>
+        <select name="progress_status" value={progressStatus}
+          onChange={(e) => setProgressStatus(e.target.value as ProgressStatus)}
+          className="w-full border border-gray-400 rounded p-2">
+          {progressOptions.map((status) => (
+            <option key={status} value={status}>{t(`progress.${status}`)}</option>
+          ))}
+        </select>
+      </div>
 
       <div>
         <label className="text-sm block mb-1 font-medium">{t('scheduleForm.handle')}</label>
@@ -81,6 +94,7 @@ export default function ScheduleForm({
           <label className="text-sm block mb-1 font-medium">{t('scheduleForm.date')}</label>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
             className="w-full border border-gray-400 rounded p-2" />
+          <p className="mt-1 text-xs text-gray-500">{t('scheduleForm.dateOptionalHelp')}</p>
         </div>
         <div>
           <label className="text-sm block mb-1 font-medium">{t('scheduleForm.hour')}</label>

@@ -5,10 +5,11 @@ import DeleteButton from './DeleteButton';
 import { shortKR, todayKR, ymdKR } from '@/lib/datetime';
 import { useI18n } from '@/lib/i18n/provider';
 import type { Schedule } from '@/types/db';
+import { progressStatusColor, progressStatusLabel } from '@/lib/schedule-status';
 
 export default function ListView({ schedules }: { schedules: Schedule[] }) {
   const today = todayKR();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   return (
     <div className="bg-white rounded-lg shadow overflow-x-auto">
@@ -16,6 +17,7 @@ export default function ListView({ schedules }: { schedules: Schedule[] }) {
         <thead className="bg-gray-100 text-left">
           <tr>
             <th className="p-3">{t('schedule.datetime')}</th>
+            <th className="p-3">{t('common.status')}</th>
             <th className="p-3">{t('common.companyName')}</th>
             <th className="p-3">{t('scheduleForm.handle')}</th>
             <th className="p-3">{t('schedule.accountLink')}</th>
@@ -24,11 +26,14 @@ export default function ListView({ schedules }: { schedules: Schedule[] }) {
         </thead>
         <tbody>
           {schedules.map((s) => {
-            const isPast = ymdKR(s.scheduled_at).localeCompare(today) < 0;
+            const isPast = s.scheduled_at ? ymdKR(s.scheduled_at).localeCompare(today) < 0 : false;
             const rowClass = isPast ? 'bg-gray-100 text-gray-500' : '';
             return (
               <tr key={s.id} className={`border-t ${rowClass}`}>
-                <td className="p-3 font-medium">{shortKR(s.scheduled_at)}</td>
+                <td className="p-3 font-medium">{s.scheduled_at ? shortKR(s.scheduled_at) : t('schedule.dateFlexible')}</td>
+                <td className="p-3">
+                  <span className={progressStatusColor(s.progress_status)}>{progressStatusLabel(s.progress_status, locale)}</span>
+                </td>
                 <td className="p-3">{s.clients?.company_name ?? '-'}</td>
                 <td className="p-3">
                   <Link href={`/influencers/${s.influencer_id}`} className="text-blue-600 hover:underline">
@@ -48,7 +53,7 @@ export default function ListView({ schedules }: { schedules: Schedule[] }) {
             );
           })}
           {!schedules.length && (
-            <tr><td colSpan={5} className="p-8 text-center text-gray-400">{t('dashboard.noSchedules')}</td></tr>
+            <tr><td colSpan={6} className="p-8 text-center text-gray-400">{t('dashboard.noSchedules')}</td></tr>
           )}
         </tbody>
       </table>

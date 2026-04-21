@@ -2,9 +2,10 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { shortKR } from '@/lib/datetime';
 import { clientStatusLabel } from '@/lib/labels';
-import { getScheduleStatus } from '@/lib/schedule-status';
+import { progressStatusLabel } from '@/lib/schedule-status';
 import { getI18n } from '@/lib/i18n/server';
 import { autoCreatePostsFromPastSchedules } from '@/actions/posts';
+import MoneyText from '@/components/MoneyText';
 
 export default async function DashboardPage({
   searchParams,
@@ -27,30 +28,30 @@ export default async function DashboardPage({
       .select('*, clients(company_name), influencers(id, handle), posts(post_url, settlement_status)')
       .order('scheduled_at', { ascending: true }),
     sb.from('clients')
-      .select('id, company_name, contact_person, phone, status, contract_start, contract_end')
+      .select('id, company_name, contact_person, phone, status, contract_start, contract_end, monthly_management_fee')
       .eq('status', 'active')
       .order('company_name'),
   ]);
 
   // 상태별 카운트
-  let reserved = 0, uploadPending = 0, settlementPending = 0, done = 0;
+  let inProgress = 0, uploadPending = 0, delayed = 0, done = 0;
   const uploadPendingList: any[] = [];
-  const settlementPendingList: any[] = [];
+  const attentionList: any[] = [];
 
   for (const s of allSchedules ?? []) {
-    const st = getScheduleStatus(s.scheduled_at, s.posts);
-    if (st === 'reserved') reserved++;
-    else if (st === 'upload_pending') { uploadPending++; uploadPendingList.push(s); }
-    else if (st === 'settlement_pending') { settlementPending++; settlementPendingList.push(s); }
-    else if (st === 'done') done++;
+    if (s.progress_status === 'uploaded') done++;
+    else if (s.progress_status === 'upload_waiting') { uploadPending++; uploadPendingList.push(s); }
+    else if (s.progress_status === 'delayed') { delayed++; attentionList.push(s); }
+    else if (s.progress_status !== 'canceled') inProgress++;
   }
+  const monthlyExpense = (clients ?? []).reduce((sum: number, c: any) => sum + (c.monthly_management_fee ?? 0), 0);
 
   const cards = [
     { label: t('dashboard.totalClients'), value: clientCount ?? 0, href: '/sales', color: 'bg-purple-600' },
     { label: t('dashboard.totalInfluencers'), value: influencerCount ?? 0, href: '/influencers', color: 'bg-green-600' },
-    { label: t('dashboard.reserved'), value: reserved, href: '/campaigns/schedules', color: 'bg-orange-500' },
+    { label: t('dashboard.inProgress'), value: inProgress, href: '/campaigns/schedules', color: 'bg-orange-500' },
     { label: t('dashboard.uploadPending'), value: uploadPending, href: '/influencers/posts', color: 'bg-red-500' },
-    { label: t('dashboard.settlementPending'), value: settlementPending, href: '/influencers/posts', color: 'bg-red-500' },
+    { label: t('dashboard.delayed'), value: delayed, href: '/campaigns/schedules', color: 'bg-amber-500' },
     { label: t('dashboard.done'), value: done, href: '/campaigns/completed', color: 'bg-green-600' },
   ];
 
@@ -67,6 +68,12 @@ export default async function DashboardPage({
             <div className="text-3xl font-bold mt-1">{c.value.toLocaleString()}</div>
           </Link>
         ))}
+        <Link href="/campaigns/clients"
+          className="bg-white rounded-lg shadow p-5 hover:shadow-md transition">
+          <div className="inline-block w-2 h-2 rounded-full bg-slate-700 mb-2"></div>
+          <div className="text-sm text-gray-600">{t('dashboard.monthlyExpense')}</div>
+          <div className="text-3xl font-bold mt-1"><MoneyText value={monthlyExpense} /></div>
+        </Link>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6 mb-6">
@@ -80,12 +87,12 @@ export default async function DashboardPage({
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-100 text-left">
-                  <tr><th className="p-2">{t('dashboard.shootDate')}</th><th className="p-2">{t('common.influencer')}</th><th className="p-2">{t('common.companyName')}</th></tr>
+                  <tr><th className="p-2">{t('dashboard.shootDate')}</th><th className="p-2">{t('common.influencer')}</th><th className="p-2">{t('common.companyName')}</th><th className="p-2">{t('common.status')}</th></tr>
                 </thead>
                 <tbody>
                   {uploadPendingList.slice(0, 10).map((s: any) => (
                     <tr key={s.id} className="border-t">
-                      <td className="p-2">{shortKR(s.scheduled_at)}</td>
+                      <td className="p-2">{s.scheduled_at ? shortKR(s.scheduled_at) : t('schedule.dateFlexible')}</td>
                       <td className="p-2">
                         <Link href={`/influencers/${s.influencers?.id}`} className="text-blue-600 hover:underline">
                           @{s.influencers?.handle}
@@ -101,10 +108,10 @@ export default async function DashboardPage({
         </div>
 
         <div className="bg-white rounded-lg shadow p-5">
-          <Link href="/influencers/posts" className="text-lg font-semibold mb-4 block hover:text-blue-600">
-            {t('dashboard.settlementPendingTop')}
+          <Link href="/campaigns/schedules" className="text-lg font-semibold mb-4 block hover:text-blue-600">
+            {t('dashboard.attentionTop')}
           </Link>
-          {settlementPendingList.length === 0 ? (
+          {attentionList.length === 0 ? (
             <p className="text-gray-400 text-sm">{t('common.none')}</p>
           ) : (
             <div className="overflow-x-auto">
@@ -113,15 +120,16 @@ export default async function DashboardPage({
                   <tr><th className="p-2">{t('dashboard.shootDate')}</th><th className="p-2">{t('common.influencer')}</th><th className="p-2">{t('common.companyName')}</th></tr>
                 </thead>
                 <tbody>
-                  {settlementPendingList.slice(0, 10).map((s: any) => (
+                  {attentionList.slice(0, 10).map((s: any) => (
                     <tr key={s.id} className="border-t">
-                      <td className="p-2">{shortKR(s.scheduled_at)}</td>
+                      <td className="p-2">{s.scheduled_at ? shortKR(s.scheduled_at) : t('schedule.dateFlexible')}</td>
                       <td className="p-2">
                         <Link href={`/influencers/${s.influencers?.id}`} className="text-blue-600 hover:underline">
                           @{s.influencers?.handle}
                         </Link>
                       </td>
                       <td className="p-2">{s.clients?.company_name}</td>
+                      <td className="p-2">{progressStatusLabel(s.progress_status, locale)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -147,6 +155,7 @@ export default async function DashboardPage({
                   <th className="p-2">{t('common.contact')}</th>
                   <th className="p-2">{t('common.status')}</th>
                   <th className="p-2">{t('dashboard.contractPeriod')}</th>
+                  <th className="p-2">{t('clientForm.monthlyManagementFee')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,6 +170,7 @@ export default async function DashboardPage({
                     <td className="p-2">{c.phone ?? '-'}</td>
                     <td className="p-2">{clientStatusLabel(c.status, locale)}</td>
                     <td className="p-2">{c.contract_start ?? '-'} ~ {c.contract_end ?? '-'}</td>
+                    <td className="p-2"><MoneyText value={c.monthly_management_fee} /></td>
                   </tr>
                 ))}
               </tbody>

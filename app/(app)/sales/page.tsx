@@ -137,6 +137,7 @@ export default async function SalesPage({
               <th className="p-3">{t('sales.firstContact')}</th>
               <th className="p-3">{t('common.status')}</th>
               <th className="p-3">{t('clientForm.contractAmount')}</th>
+              <th className="p-3">{t('clientForm.monthlyManagementFee')}</th>
               <th className="p-3">{t('sales.contractDate')}</th>
               <th className="p-3">{t('sales.assignee')}</th>
             </tr>
@@ -163,13 +164,14 @@ export default async function SalesPage({
                     </span>
                   </td>
                   <td className="p-3"><MoneyText value={c.contract_amount} /></td>
+                  <td className="p-3"><MoneyText value={c.monthly_management_fee} /></td>
                   <td className="p-3">{c.contract_start ?? '-'}</td>
                   <td className="p-3">{c.owner?.name ?? '-'}</td>
                 </tr>
               );
             })}
             {!clients.length && (
-              <tr><td colSpan={10} className="p-8 text-center text-gray-400">{t('sales.noResults')}</td></tr>
+              <tr><td colSpan={11} className="p-8 text-center text-gray-400">{t('sales.noResults')}</td></tr>
             )}
           </tbody>
         </table>

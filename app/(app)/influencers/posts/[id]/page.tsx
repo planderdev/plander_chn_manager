@@ -9,7 +9,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
   const sb = await createClient();
   const [{ data: post }, { data: influencers }, { data: clients }, { data: schedules }, { data: linkedPosts }] = await Promise.all([
     sb.from('posts').select('*').eq('id', Number(id)).single(),
-    sb.from('influencers').select('id, handle, account_url, unit_price, name_en, bank_name, branch_name, account_number, phone, prefecture, city, street').order('handle'),
+    sb.from('influencers').select('id, handle, account_url, name_en, bank_name, branch_name, account_number, phone, prefecture, city, street').order('handle'),
     sb.from('clients').select('id, company_name').order('company_name'),
     sb.from('schedules').select('id, scheduled_at, client_id, influencer_id').order('scheduled_at', { ascending: false }),
     sb.from('posts').select('schedule_id, id').not('schedule_id', 'is', null),

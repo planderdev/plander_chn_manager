@@ -5,9 +5,9 @@ import SubmitButton from '@/components/SubmitButton';
 import { fullKR } from '@/lib/datetime';
 import { useI18n } from '@/lib/i18n/provider';
 
-type InfOpt = { id: number; handle: string; account_url: string | null; unit_price: number | null; name_en: string | null; bank_name: string | null; branch_name: string | null; account_number: string | null; phone: string | null; prefecture: string | null; city: string | null; street: string | null };
+type InfOpt = { id: number; handle: string; account_url: string | null; name_en: string | null; bank_name: string | null; branch_name: string | null; account_number: string | null; phone: string | null; prefecture: string | null; city: string | null; street: string | null };
 type CliOpt = { id: number; company_name: string };
-type ScheduleOpt = { id: number; scheduled_at: string; client_id: number; influencer_id: number };
+type ScheduleOpt = { id: number; scheduled_at: string | null; client_id: number; influencer_id: number };
 
 
 
@@ -20,7 +20,6 @@ export default function PostForm({
     post ? influencers.find(i => i.id === post.influencer_id) ?? null : null
   );
   const [selCli, setSelCli] = useState<number | ''>(post?.client_id ?? '');
-  const [status, setStatus] = useState(post?.settlement_status ?? 'pending');
   const selCliObj = clients.find(c => c.id === Number(selCli));
   const [selScheduleId, setSelScheduleId] = useState<number | ''>(post?.schedule_id ?? '');
 
@@ -87,7 +86,7 @@ export default function PostForm({
                 className="w-full border border-gray-400 rounded p-2">
                 <option value="">{t('postForm.noLink')}</option>
                 {matchingSchedules.map((s) => (
-                  <option key={s.id} value={s.id}>{fullKR(s.scheduled_at)}</option>
+                  <option key={s.id} value={s.id}>{s.scheduled_at ? fullKR(s.scheduled_at) : t('schedule.dateFlexible')}</option>
                 ))}
               </select>
               {matchingSchedules.length === 0 && (
@@ -106,7 +105,6 @@ export default function PostForm({
             <Read label={t('postForm.company')} value={selCliObj.company_name} />
             <Read label={t('postForm.influencer')} value={`@${selInf.handle}`} />
             <Read label={t('postForm.accountLink')} value={selInf.account_url} link />
-            <Read label={t('postForm.unitPrice')} value={selInf.unit_price != null ? `¥${selInf.unit_price.toLocaleString()}` : '-'} />
             <Read label={t('postForm.nameEn')} value={selInf.name_en} />
             <Read label={t('postForm.bankBranch')} value={[selInf.bank_name, selInf.branch_name].filter(Boolean).join(' / ') || '-'} />
             <Read label={t('postForm.accountNumber')} value={selInf.account_number} />
@@ -124,30 +122,7 @@ export default function PostForm({
           <Field name="post_url" label={t('postForm.postUrl')} defaultValue={post?.post_url ?? ''} />
 
           <Field name="uploaded_on" label={t('postForm.uploadedOn')} type="date" defaultValue={post?.uploaded_on ?? ''} />
-
-          <div>
-            <label className="text-sm block mb-1 font-medium">{t('postForm.settlementStatus')}</label>
-            <select name="settlement_status" value={status}
-              onChange={(e) => setStatus(e.target.value as any)}
-              className="w-full border border-gray-400 rounded p-2 max-w-xs">
-              <option value="pending">{t('postForm.pending')}</option>
-              <option value="done">{t('postForm.done')}</option>
-            </select>
-          </div>
-
-          {status === 'done' && (
-            <Field name="settled_on" label={t('postForm.settledOn')}
-              defaultValue={post?.settled_on?.replaceAll('-','') ?? ''}
-              placeholder="20260411" />
-          )}
-
-          <div>
-            <label className="text-sm block mb-1 font-medium">{t('postForm.paymentProof')}</label>
-            <input type="file" name="payment_proof" accept="image/png,image/jpeg" />
-            {post?.payment_proof_path && (
-              <p className="text-xs text-gray-600 mt-1">{t('postForm.fileExists')}</p>
-            )}
-          </div>
+          <input type="hidden" name="settlement_status" value={post?.settlement_status ?? 'pending'} />
 
           <SubmitButton>{t('common.save')}</SubmitButton>
         </div>

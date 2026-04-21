@@ -110,6 +110,14 @@ export default function ClientForm({
             className="w-full border border-gray-400 rounded p-2 max-w-xs" />
         </div>
 
+        <div>
+          <label className="text-sm block mb-1 font-medium">{t('clientForm.monthlyManagementFee')}</label>
+          <NumberInput name="monthly_management_fee"
+            defaultValue={client?.monthly_management_fee ?? ''}
+            className="w-full border border-gray-400 rounded p-2 max-w-xs" />
+          <p className="mt-1 text-xs text-gray-500">{t('clientForm.monthlyManagementFeeHelp')}</p>
+        </div>
+
         <div className="grid grid-cols-2 gap-4 max-w-md">
           <div>
             <label className="text-sm block mb-1 font-medium">{t('clientForm.contractStart')}</label>

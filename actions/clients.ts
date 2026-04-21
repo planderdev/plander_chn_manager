@@ -13,6 +13,7 @@ function parseClientPayload(formData: FormData) {
     contract_start: String(formData.get('contract_start') || '') || null,
     contract_end: String(formData.get('contract_end') || '') || null,
     contract_amount: Number(formData.get('contract_amount')) || null,
+    monthly_management_fee: Number(formData.get('monthly_management_fee')) || null,
     memo: String(formData.get('memo') || '') || null,
     postal_code: String(formData.get('postal_code') || '') || null,
     region: String(formData.get('region') || '') || null,

@@ -6,6 +6,7 @@ import { ymdKR, todayKR, timeKR, compareDayKR } from '@/lib/datetime';
 import Link from 'next/link';
 import { deleteScheduleAction } from '@/actions/schedules';
 import { useI18n } from '@/lib/i18n/provider';
+import { progressStatusLabel } from '@/lib/schedule-status';
 
 export default function CalendarView({ schedules }: { schedules: Schedule[] }) {
   const [cursor, setCursor] = useState(new Date());
@@ -18,6 +19,7 @@ export default function CalendarView({ schedules }: { schedules: Schedule[] }) {
 
   const byDay = new Map<string, Schedule[]>();
   for (const s of schedules) {
+    if (!s.scheduled_at) continue;
     const key = ymdKR(s.scheduled_at);
     if (!byDay.has(key)) byDay.set(key, []);
     byDay.get(key)!.push(s);
@@ -59,7 +61,7 @@ export default function CalendarView({ schedules }: { schedules: Schedule[] }) {
               <div className="space-y-0.5 mt-1">
                 {items.slice(0, 3).map((s) => (
                   <div key={s.id} className={`text-[10px] rounded px-1 truncate ${chipClass}`}>
-                    {timeKR(s.scheduled_at)} @{s.influencers?.handle}
+                    {s.scheduled_at ? timeKR(s.scheduled_at) : t('schedule.dateFlexible')} @{s.influencers?.handle}
                   </div>
                 ))}
                 {items.length > 3 && <div className="text-[10px] text-gray-500">+{items.length - 3}</div>}
@@ -83,9 +85,10 @@ export default function CalendarView({ schedules }: { schedules: Schedule[] }) {
               {modalItems.map((s) => (
                 <div key={s.id} className="border border-gray-200 rounded p-3 text-sm">
                   <Link href={`/campaigns/schedules/${s.id}`} className="block hover:bg-gray-50">
-                    <div className="font-semibold">{timeKR(s.scheduled_at)}</div>
+                    <div className="font-semibold">{s.scheduled_at ? timeKR(s.scheduled_at) : t('schedule.dateFlexible')}</div>
                     <div>@{s.influencers?.handle}</div>
                     <div className="text-gray-600">{s.clients?.company_name}</div>
+                    <div className="text-xs text-gray-500">{progressStatusLabel(s.progress_status, locale)}</div>
                   </Link>
                 <div className="flex justify-end mt-2">
                   <button type="button"

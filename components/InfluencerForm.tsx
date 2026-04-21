@@ -76,11 +76,6 @@ export default function InfluencerForm({
             <input name="followers" type="number" required defaultValue={i?.followers ?? ''}
               className="w-full border border-gray-400 rounded p-2" />
           </div>
-          <div>
-            <label className="text-sm block mb-1 font-medium">{t('influencerForm.unitPrice')}</label>
-            <input name="unit_price" type="number" required defaultValue={i?.unit_price ?? ''}
-              className="w-full border border-gray-400 rounded p-2" />
-          </div>
         </div>
         <div>
           <label className="text-sm block mb-1 font-medium">{t('influencerForm.accountUrl')}</label>
@@ -96,9 +91,9 @@ export default function InfluencerForm({
         </div>
       </div>
 
-      {/* 정산 정보 (주소 포함) */}
+      {/* 연락/관리 정보 (주소 포함) */}
       <div className="space-y-3">
-        <h2 className="text-base font-semibold border-b border-gray-300 pb-1">{t('common.settlementInfo')}</h2>
+        <h2 className="text-base font-semibold border-b border-gray-300 pb-1">{t('common.managementInfo')}</h2>
 
         <div>
           <label className="text-sm block mb-1 font-medium">{t('influencerForm.nameEn')}</label>
