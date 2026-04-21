@@ -19,10 +19,15 @@ export default async function StatsPage({
   const { client, influencer, from, to } = await searchParams;
   const sb = await createClient();
 
-  const [{ data: clients }, { data: influencers }] = await Promise.all([
+  const [clientsResult, { data: influencers }] = await Promise.all([
     sb.from('clients').select('id, company_name, status, monthly_management_fee').order('company_name'),
     sb.from('influencers').select('id, handle').order('handle'),
   ]);
+  let clients = clientsResult.data ?? [];
+  if (clientsResult.error && String(clientsResult.error.message).includes('monthly_management_fee')) {
+    const { data } = await sb.from('clients').select('id, company_name, status').order('company_name');
+    clients = (data ?? []).map((c: any) => ({ ...c, monthly_management_fee: null }));
+  }
 
   const fromDate = parseYmd(from);
   const toDate = parseYmd(to);

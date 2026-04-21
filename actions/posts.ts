@@ -10,6 +10,14 @@ function parseYmd(s: string | null): string | null {
   return `${clean.slice(0,4)}-${clean.slice(4,6)}-${clean.slice(6,8)}`;
 }
 
+function isMissingProgressColumn(error: any) {
+  const message = String(error?.message ?? '');
+  return error?.code === '42703'
+    || error?.code === 'PGRST204'
+    || message.includes('progress_status')
+    || message.includes('schema cache');
+}
+
 export async function upsertPostAction(fd: FormData) {
   const sb = await createClient();
   const id = fd.get('id') ? Number(fd.get('id')) : null;
@@ -44,7 +52,8 @@ export async function upsertPostAction(fd: FormData) {
   }
 
   if (payload.schedule_id && payload.post_url) {
-    await sb.from('schedules').update({ progress_status: 'uploaded' }).eq('id', payload.schedule_id);
+    const { error } = await sb.from('schedules').update({ progress_status: 'uploaded' }).eq('id', payload.schedule_id);
+    if (error && !isMissingProgressColumn(error)) throw new Error(error.message);
   }
 
   revalidatePath('/influencers/posts');
@@ -63,11 +72,22 @@ export async function autoCreatePostsFromPastSchedules() {
   const sb = await createClient();
 
   // 중국 버전에서는 날짜보다 상태를 기준으로 게시물 관리 대상을 만듭니다.
-  const { data: schedules } = await sb.from('schedules')
+  const progressQuery = await sb.from('schedules')
     .select('id, client_id, influencer_id, posts(id)')
     .in('progress_status', ['upload_waiting', 'uploaded']);
+  let schedules = progressQuery.data;
+  let queryError = progressQuery.error;
 
-  if (!schedules) return { created: 0 };
+  if (queryError && isMissingProgressColumn(queryError)) {
+    const now = new Date().toISOString();
+    const fallback = await sb.from('schedules')
+      .select('id, client_id, influencer_id, posts(id)')
+      .lt('scheduled_at', now);
+    schedules = fallback.data;
+    queryError = fallback.error;
+  }
+
+  if (queryError || !schedules) return { created: 0 };
 
   const targets = schedules.filter((s: any) => !s.posts || s.posts.length === 0);
   if (targets.length === 0) return { created: 0 };
@@ -81,8 +101,8 @@ export async function autoCreatePostsFromPastSchedules() {
     settlement_status: 'pending' as const,
   }));
 
-  const { error } = await sb.from('posts').insert(payload);
-  if (error) console.error('Auto-create posts error:', error.message);
+  const { error: insertError } = await sb.from('posts').insert(payload);
+  if (insertError) console.error('Auto-create posts error:', insertError.message);
 
   return { created: targets.length };
 }

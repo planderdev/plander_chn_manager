@@ -20,7 +20,7 @@ export default async function DashboardPage({
     { count: influencerCount },
     { count: clientCount },
     { data: allSchedules },
-    { data: clients },
+    clientsResult,
   ] = await Promise.all([
     sb.from('influencers').select('id', { count: 'exact', head: true }),
     sb.from('clients').select('id', { count: 'exact', head: true }),
@@ -32,6 +32,14 @@ export default async function DashboardPage({
       .eq('status', 'active')
       .order('company_name'),
   ]);
+  let clients = clientsResult.data ?? [];
+  if (clientsResult.error && String(clientsResult.error.message).includes('monthly_management_fee')) {
+    const { data } = await sb.from('clients')
+      .select('id, company_name, contact_person, phone, status, contract_start, contract_end')
+      .eq('status', 'active')
+      .order('company_name');
+    clients = (data ?? []).map((c: any) => ({ ...c, monthly_management_fee: null }));
+  }
 
   // 상태별 카운트
   let inProgress = 0, uploadPending = 0, delayed = 0, done = 0;

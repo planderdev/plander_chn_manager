@@ -28,6 +28,19 @@ function parseClientPayload(formData: FormData) {
   };
 }
 
+function isMissingMonthlyFeeColumn(error: any) {
+  const message = String(error?.message ?? '');
+  return error?.code === '42703'
+    || error?.code === 'PGRST204'
+    || message.includes('monthly_management_fee')
+    || message.includes('schema cache');
+}
+
+function withoutMonthlyManagementFee<T extends Record<string, any>>(payload: T) {
+  const { monthly_management_fee: _monthlyManagementFee, ...rest } = payload;
+  return rest;
+}
+
 async function getAuthAdmin() {
   const sb = await createSupabase();
   const { data: { user } } = await sb.auth.getUser();
@@ -51,7 +64,12 @@ export async function createClientAction(formData: FormData) {
   // owner_id가 비어있으면 현재 유저로
   if (!payload.owner_id) payload.owner_id = user.id;
 
-  const { data: inserted, error } = await sb.from('clients').insert(payload).select().single();
+  let { data: inserted, error } = await sb.from('clients').insert(payload).select().single();
+  if (error && isMissingMonthlyFeeColumn(error)) {
+    const retry = await sb.from('clients').insert(withoutMonthlyManagementFee(payload)).select().single();
+    inserted = retry.data;
+    error = retry.error;
+  }
   if (error) {
     if (error.code === '23505') throw new Error('이미 등록된 업체명입니다');
     throw new Error(error.message);
@@ -88,7 +106,11 @@ export async function updateClientAction(formData: FormData) {
 
   const payload = parseClientPayload(formData);
 
-  const { error } = await sb.from('clients').update(payload).eq('id', id);
+  let { error } = await sb.from('clients').update(payload).eq('id', id);
+  if (error && isMissingMonthlyFeeColumn(error)) {
+    const retry = await sb.from('clients').update(withoutMonthlyManagementFee(payload)).eq('id', id);
+    error = retry.error;
+  }
   if (error) throw new Error(error.message);
 
   const file = formData.get('contract_file') as File | null;

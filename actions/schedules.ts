@@ -3,6 +3,19 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+function isMissingProgressColumn(error: any) {
+  const message = String(error?.message ?? '');
+  return error?.code === '42703'
+    || error?.code === 'PGRST204'
+    || message.includes('progress_status')
+    || message.includes('schema cache');
+}
+
+function withoutProgressStatus<T extends Record<string, any>>(payload: T) {
+  const { progress_status: _progressStatus, ...rest } = payload;
+  return rest;
+}
+
 export async function createScheduleAction(fd: FormData) {
   const sb = await createClient();
   const clientId = Number(fd.get('client_id'));
@@ -15,7 +28,11 @@ export async function createScheduleAction(fd: FormData) {
     progress_status: String(fd.get('progress_status') || 'recruiting') as any,
     memo: String(fd.get('memo') || '') || null,
   };
-  const { error } = await sb.from('schedules').insert(payload);
+  let { error } = await sb.from('schedules').insert(payload);
+  if (error && isMissingProgressColumn(error)) {
+    const retry = await sb.from('schedules').insert(withoutProgressStatus(payload));
+    error = retry.error;
+  }
   if (error) throw new Error(error.message);
   revalidatePath('/campaigns/schedules');
   redirect('/campaigns/schedules');
@@ -42,7 +59,11 @@ export async function updateScheduleAction(fd: FormData) {
     progress_status: String(fd.get('progress_status') || 'recruiting') as any,
     memo: String(fd.get('memo') || '') || null,
   };
-  const { error } = await sb.from('schedules').update(payload).eq('id', id);
+  let { error } = await sb.from('schedules').update(payload).eq('id', id);
+  if (error && isMissingProgressColumn(error)) {
+    const retry = await sb.from('schedules').update(withoutProgressStatus(payload)).eq('id', id);
+    error = retry.error;
+  }
   if (error) throw new Error(error.message);
   revalidatePath('/campaigns/schedules');
   redirect('/campaigns/schedules');
