@@ -1,7 +1,7 @@
 'use server';
 import { createClient as createSupabase } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import { redirectWithToast } from '@/lib/action-feedback';
 
 function parseClientPayload(formData: FormData) {
   return {
@@ -86,7 +86,7 @@ export async function createClientAction(formData: FormData) {
 
   revalidatePath('/sales');
   revalidatePath('/campaigns/clients');
-  redirect(`/campaigns/clients/${inserted.id}`);
+  redirectWithToast(`/campaigns/clients/${inserted.id}`, 'created');
 }
 
 export async function updateClientAction(formData: FormData) {
@@ -122,10 +122,10 @@ export async function updateClientAction(formData: FormData) {
 
   revalidatePath('/sales');
   revalidatePath('/campaigns/clients');
-  redirect(`/campaigns/clients/${id}`);
+  redirectWithToast(`/campaigns/clients/${id}`, 'saved');
 }
 
-export async function deleteClientAction(id: number) {
+export async function deleteClientAction(id: number, redirectTo = '/campaigns/clients', _formData?: FormData) {
   const sb = await createSupabase();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) throw new Error('Unauthorized');
@@ -140,4 +140,5 @@ export async function deleteClientAction(id: number) {
   if (error) throw new Error(error.message);
   revalidatePath('/sales');
   revalidatePath('/campaigns/clients');
+  redirectWithToast(redirectTo, 'deleted');
 }

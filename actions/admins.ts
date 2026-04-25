@@ -2,7 +2,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createSbClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import { redirectWithToast } from '@/lib/action-feedback';
 
 export async function createAdminAction(fd: FormData) {
   const email = String(fd.get('email') || '');
@@ -44,7 +44,7 @@ if (error) {
   if (profileErr) throw new Error(profileErr.message);
 
   revalidatePath('/extras/admins');
-  redirect('/extras/admins');
+  redirectWithToast('/extras/admins', 'created');
 }
 
 export async function updateAdminAction(fd: FormData) {
@@ -77,10 +77,10 @@ export async function updateAdminAction(fd: FormData) {
 
   revalidatePath('/extras/admins');
   revalidatePath(`/extras/admins/${id}`);
-  redirect('/extras/admins');
+  redirectWithToast('/extras/admins', 'saved');
 }
 
-export async function deleteAdminAction(id: string) {
+export async function deleteAdminAction(id: string, redirectTo = '/extras/admins', _formData?: FormData) {
   const sb = await createClient();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) throw new Error('Unauthorized');
@@ -98,4 +98,5 @@ export async function deleteAdminAction(id: string) {
   await sb.from('admins').delete().eq('id', id);
 
   revalidatePath('/extras/admins');
+  redirectWithToast(redirectTo, 'deleted');
 }

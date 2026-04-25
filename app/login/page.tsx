@@ -96,7 +96,7 @@ export default function LoginPage() {
           disabled={isSubmitting}
           className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-500"
         >
-          {t('login.submit')}
+          {isSubmitting ? t('common.loading') : t('login.submit')}
         </button>
         </form>
       </div>

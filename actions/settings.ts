@@ -2,6 +2,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { DEFAULT_CNY_TO_KRW_RATE } from '@/lib/exchange-rate';
+import { redirectWithToast } from '@/lib/action-feedback';
 
 export async function saveApifyTokenAction(fd: FormData) {
   const token = String(fd.get('apify_token') || '').trim();
@@ -23,6 +24,7 @@ export async function saveApifyTokenAction(fd: FormData) {
   }
 
   revalidatePath('/extras/admins');
+  redirectWithToast('/extras/admins', 'saved');
 }
 
 export async function getApifyTokenStatus() {
@@ -50,4 +52,5 @@ export async function saveExchangeRateAction(fd: FormData) {
 
   revalidatePath('/extras/admins');
   revalidatePath('/extras/stats');
+  redirectWithToast('/extras/admins', 'saved');
 }

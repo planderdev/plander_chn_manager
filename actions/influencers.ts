@@ -1,7 +1,7 @@
 'use server';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import { redirectWithToast } from '@/lib/action-feedback';
 
 function parsePayload(fd: FormData) {
   return {
@@ -32,7 +32,7 @@ export async function createInfluencerAction(fd: FormData) {
     throw new Error(error.message);
   }
   revalidatePath('/influencers');
-  redirect('/influencers');
+  redirectWithToast('/influencers', 'created');
 }
 
 export async function updateInfluencerAction(fd: FormData) {
@@ -41,12 +41,13 @@ export async function updateInfluencerAction(fd: FormData) {
   const { error } = await sb.from('influencers').update(parsePayload(fd)).eq('id', id);
   if (error) throw new Error(error.message);
   revalidatePath('/influencers');
-  redirect('/influencers');
+  redirectWithToast('/influencers', 'saved');
 }
 
-export async function deleteInfluencerAction(id: number) {
+export async function deleteInfluencerAction(id: number, redirectTo = '/influencers', _formData?: FormData) {
   const sb = await createClient();
   const { error } = await sb.from('influencers').delete().eq('id', id);
   if (error) throw new Error(error.message);
   revalidatePath('/influencers');
+  redirectWithToast(redirectTo, 'deleted');
 }

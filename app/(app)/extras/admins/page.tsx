@@ -3,12 +3,12 @@ import { createAdminAction } from '@/actions/admins';
 import PhoneInput from '@/components/PhoneInput';
 import SubmitButton from '@/components/SubmitButton';
 import { saveApifyTokenAction, getApifyTokenStatus, saveExchangeRateAction } from '@/actions/settings';
-import { syncAllPosts } from '@/actions/sync-metrics';
-import { revalidatePath } from 'next/cache';
 import Link from 'next/link';
 import { deleteAdminAction } from '@/actions/admins';
 import { getI18n } from '@/lib/i18n/server';
 import { DEFAULT_CNY_TO_KRW_RATE, formatExchangePolicy } from '@/lib/exchange-rate';
+import FormStatusButton from '@/components/FormStatusButton';
+import { syncMetricsNowAction } from '@/actions/sync-metrics';
 
 export default async function AdminsPage() {
   const { locale, t } = await getI18n();
@@ -70,14 +70,14 @@ export default async function AdminsPage() {
                   <td className="p-3">{new Date(a.created_at).toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'ko-KR')}</td>
                   <td className="p-3 space-x-2">
                     <Link href={`/extras/admins/${a.id}`} className="text-blue-600">{t('common.edit')}</Link>
-                    <form action={async () => {
-                      'use server';
-                      await deleteAdminAction(a.id);
-                    }} className="inline">
-                      <button className="text-red-500"
-                        formAction={async () => { 'use server'; await deleteAdminAction(a.id); }}>
+                    <form action={deleteAdminAction.bind(null, a.id, '/extras/admins')} className="inline">
+                      <FormStatusButton
+                        pendingText={t('common.loading')}
+                        className="text-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+                        onClick={(e) => { if (!confirm(t('delete.confirm'))) e.preventDefault(); }}
+                      >
                         {t('common.delete')}
-                      </button>
+                      </FormStatusButton>
                     </form>
                   </td>
                 </tr>
@@ -160,12 +160,7 @@ export default async function AdminsPage() {
               {t('admin.syncHelp')}
             </p>
           </div>
-          <form action={async () => {
-            'use server';
-            const result = await syncAllPosts();
-            console.log('[sync result]', result);
-            revalidatePath('/influencers/posts');
-          }}>
+          <form action={syncMetricsNowAction}>
             <SubmitButton>{t('admin.syncNow')}</SubmitButton>
           </form>
         </div>

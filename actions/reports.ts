@@ -3,8 +3,10 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { generateReportPdf } from '@/lib/pdf/reportTemplate';
 import { getLocale } from '@/lib/i18n/server';
+import { redirectBackWithToast, redirectWithToast } from '@/lib/action-feedback';
 
 export async function generateReportAction(formData: FormData) {
+  let redirectPath = '/extras/reports';
   try {
     const sb = await createClient();
     const locale = await getLocale();
@@ -64,18 +66,21 @@ export async function generateReportAction(formData: FormData) {
     if (dbErr) throw new Error('db: ' + dbErr.message);
 
     revalidatePath('/extras/reports');
+    redirectPath = '/extras/reports';
   } catch (e: any) {
     console.error('[REPORT] FATAL', e);
     throw new Error('보고서 생성 실패: ' + (e?.message ?? 'unknown'));
   }
+  await redirectBackWithToast(redirectPath, 'completed');
 }
 
-export async function deleteReportAction(id: number) {
+export async function deleteReportAction(id: number, redirectTo = '/extras/reports', _formData?: FormData) {
   const sb = await createClient();
   const { data: r } = await sb.from('reports').select('file_path').eq('id', id).single();
   if (r) await sb.storage.from('reports').remove([r.file_path]);
   await sb.from('reports').delete().eq('id', id);
   revalidatePath('/extras/reports');
+  redirectWithToast(redirectTo, 'deleted');
 }
 
 export async function getReportDownloadUrl(filePath: string) {

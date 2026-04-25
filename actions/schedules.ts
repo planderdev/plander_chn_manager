@@ -1,7 +1,7 @@
 'use server';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import { redirectWithToast } from '@/lib/action-feedback';
 
 function isMissingProgressColumn(error: any) {
   const message = String(error?.message ?? '');
@@ -35,15 +35,16 @@ export async function createScheduleAction(fd: FormData) {
   }
   if (error) throw new Error(error.message);
   revalidatePath('/campaigns/schedules');
-  redirect('/campaigns/schedules');
+  redirectWithToast('/campaigns/schedules', 'created');
 }
 
-export async function deleteScheduleAction(id: number) {
+export async function deleteScheduleAction(id: number, redirectTo = '/campaigns/schedules', _formData?: FormData) {
   'use server';
   const sb = await createClient();
   const { error } = await sb.from('schedules').delete().eq('id', id);
   if (error) throw new Error(error.message);
   revalidatePath('/campaigns/schedules');
+  redirectWithToast(redirectTo, 'deleted');
 }
 
 export async function updateScheduleAction(fd: FormData) {
@@ -66,5 +67,5 @@ export async function updateScheduleAction(fd: FormData) {
   }
   if (error) throw new Error(error.message);
   revalidatePath('/campaigns/schedules');
-  redirect('/campaigns/schedules');
+  redirectWithToast('/campaigns/schedules', 'saved');
 }

@@ -6,6 +6,7 @@ import Logo from '@/components/Logo';
 import { localeLabels } from '@/lib/i18n/config';
 import { useI18n } from '@/lib/i18n/provider';
 import { usePresentation } from '@/lib/presentation-context';
+import FormStatusButton from '@/components/FormStatusButton';
 
 export default function Sidebar({
   userName, signOutAction,
@@ -102,7 +103,12 @@ export default function Sidebar({
           <div className="px-3 mb-2">{userName}</div>
           <NavLink href="/extras/admins" pathname={pathname} onClick={close}>{t('nav.adminPage')}</NavLink>
           <form action={signOutAction}>
-            <button className="w-full text-left px-3 py-2 rounded hover:bg-gray-800">{t('nav.logout')}</button>
+            <FormStatusButton
+              pendingText={t('common.loading')}
+              className="w-full text-left px-3 py-2 rounded hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {t('nav.logout')}
+            </FormStatusButton>
           </form>
         </div>
       </aside>

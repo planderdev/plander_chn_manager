@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { deleteScheduleAction } from '@/actions/schedules';
 import { useI18n } from '@/lib/i18n/provider';
 import { progressStatusLabel } from '@/lib/schedule-status';
+import FormStatusButton from '@/components/FormStatusButton';
 
 export default function CalendarView({ schedules }: { schedules: Schedule[] }) {
   const [cursor, setCursor] = useState(new Date());
@@ -91,15 +92,18 @@ export default function CalendarView({ schedules }: { schedules: Schedule[] }) {
                     <div className="text-xs text-gray-500">{progressStatusLabel(s.progress_status, locale)}</div>
                   </Link>
                 <div className="flex justify-end mt-2">
-                  <button type="button"
-                    onClick={async () => {
-                      if (!confirm(t('calendar.deleteConfirm'))) return;
-                      await deleteScheduleAction(s.id);
-                      setModalDay(null);
-                    }}
-                    className="text-xs text-red-500 hover:text-red-700">
-                    {t('common.delete')}
-                  </button>
+                  <form action={deleteScheduleAction.bind(null, s.id, '/campaigns/schedules')}>
+                    <FormStatusButton
+                      pendingText={t('common.loading')}
+                      className="text-xs text-red-500 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={(e) => {
+                        if (!confirm(t('calendar.deleteConfirm'))) e.preventDefault();
+                        else setModalDay(null);
+                      }}
+                    >
+                      {t('common.delete')}
+                    </FormStatusButton>
+                  </form>
                 </div>
               </div>
             ))}

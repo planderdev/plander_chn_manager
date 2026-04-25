@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { LocaleProvider } from "@/lib/i18n/provider";
 import { getLocale } from "@/lib/i18n/server";
+import ActionToastPopup from "@/components/ActionToastPopup";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -40,6 +41,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col overflow-x-hidden">
         <LocaleProvider initialLocale={locale}>
+          <ActionToastPopup />
           {children}
         </LocaleProvider>
       </body>

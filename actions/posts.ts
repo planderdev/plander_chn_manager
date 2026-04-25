@@ -1,7 +1,7 @@
 'use server';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import { redirectWithToast } from '@/lib/action-feedback';
 
 function parseYmd(s: string | null): string | null {
   if (!s) return null;
@@ -58,14 +58,15 @@ export async function upsertPostAction(fd: FormData) {
 
   revalidatePath('/influencers/posts');
   revalidatePath('/campaigns/completed');
-  redirect('/influencers/posts');
+  redirectWithToast('/influencers/posts', 'saved');
 }
 
-export async function deletePostAction(id: number) {
+export async function deletePostAction(id: number, redirectTo = '/influencers/posts', _formData?: FormData) {
   const sb = await createClient();
   const { error } = await sb.from('posts').delete().eq('id', id);
   if (error) throw new Error(error.message);
   revalidatePath('/influencers/posts');
+  redirectWithToast(redirectTo, 'deleted');
 }
 
 export async function autoCreatePostsFromPastSchedules() {

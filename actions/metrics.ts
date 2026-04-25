@@ -1,6 +1,7 @@
 'use server';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { redirectBackWithToast } from '@/lib/action-feedback';
 
 // 해당 월에 입력 가능한 게시물 목록 + 기존 입력값
 export async function getMetricsForMonth(month: string) {
@@ -72,4 +73,5 @@ export async function saveMetricsForMonth(fd: FormData) {
 
   revalidatePath('/influencers/posts/metrics');
   revalidatePath('/influencers/posts');
+  await redirectBackWithToast('/influencers/posts/metrics', 'saved');
 }

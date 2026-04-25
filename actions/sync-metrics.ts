@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { scrapeInstagramPosts } from '@/lib/apify';
+import { revalidatePath } from 'next/cache';
+import { redirectWithToast } from '@/lib/action-feedback';
 
 export async function syncAllPosts() {
   const sb = createClient(
@@ -63,4 +65,12 @@ export async function syncAllPosts() {
   }
 
   return { synced: updated, total: posts.length };
+}
+
+export async function syncMetricsNowAction() {
+  'use server';
+  await syncAllPosts();
+  revalidatePath('/influencers/posts');
+  revalidatePath('/extras/admins');
+  redirectWithToast('/extras/admins', 'completed');
 }

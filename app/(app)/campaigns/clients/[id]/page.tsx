@@ -73,7 +73,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <BackButton />
         {canEdit && (
           <div className="ml-auto">
-            <DeleteButton id={c.id} />
+            <DeleteButton id={c.id} redirectTo="/campaigns/clients" />
           </div>
         )}
       </div>
