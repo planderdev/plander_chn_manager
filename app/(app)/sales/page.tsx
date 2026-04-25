@@ -116,7 +116,7 @@ export default async function SalesPage({
             ))}
           </select>
         </div>
-        <div className="flex-1 min-w-[150px]">
+        <div className="min-w-0 flex-1 md:min-w-[150px]">
           <label className="text-sm block mb-1 font-medium">{t('sales.searchCompany')}</label>
           <input type="text" name="q" defaultValue={q ?? ''} placeholder={t('sales.searchPlaceholder')}
             className="border border-gray-400 rounded p-2 text-sm w-full" />
@@ -126,7 +126,7 @@ export default async function SalesPage({
 
       {/* 리스트 */}
       <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="w-full text-sm min-w-[1100px]">
+        <table className="w-full min-w-full text-sm md:min-w-[1100px]">
           <thead className="bg-gray-100 text-left">
             <tr>
               <th className="p-3">{t('common.companyName')}</th>

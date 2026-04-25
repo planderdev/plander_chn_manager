@@ -21,7 +21,7 @@ export default async function ReportsPage() {
       <section>
         <h2 className="text-lg font-semibold mb-3">{t('reports.new')}</h2>
         <form action={generateReportAction} className="bg-white p-6 rounded-lg shadow flex flex-wrap gap-4 items-end max-w-2xl">
-          <div className="flex-1 min-w-[200px]">
+          <div className="min-w-0 flex-1 md:min-w-[200px]">
             <label className="text-sm block mb-1 font-medium">{t('reports.company')}</label>
             <select name="client_id" required className="w-full border border-gray-400 rounded p-2">
               <option value="">{t('reports.select')}</option>
@@ -39,7 +39,7 @@ export default async function ReportsPage() {
       <section>
         <h2 className="text-lg font-semibold mb-3">{t('reports.generated')}</h2>
         <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="w-full text-sm min-w-[600px]">
+          <table className="w-full min-w-full text-sm md:min-w-[600px]">
             <thead className="bg-gray-100 text-left">
               <tr>
                 <th className="p-3">{t('common.companyName')}</th>

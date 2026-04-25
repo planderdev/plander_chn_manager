@@ -49,7 +49,7 @@ export default async function MetricsPage({
           <input type="hidden" name="month" value={month} />
 
           <div className="bg-white rounded-lg shadow overflow-x-auto">
-            <table className="w-full text-sm min-w-[1100px]">
+            <table className="w-full min-w-full text-sm md:min-w-[1100px]">
               <thead className="bg-gray-100 text-left">
                 <tr>
                   <th className="p-3">{t('report.uploadDate')}</th>

@@ -155,7 +155,7 @@ export default async function DashboardPage({
           <p className="text-gray-400 text-sm">{t('dashboard.noClients')}</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[600px]">
+            <table className="w-full min-w-full text-sm md:min-w-[600px]">
               <thead className="bg-gray-100 text-left">
                 <tr>
                   <th className="p-2">{t('common.companyName')}</th>

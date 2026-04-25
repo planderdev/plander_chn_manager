@@ -24,9 +24,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <PresentationProvider>
-      <div className="min-h-screen md:flex">
+      <div className="min-h-screen overflow-x-hidden md:flex">
         <Sidebar userName={userName} signOutAction={signOutAction} />
-        <main className="flex-1 bg-gray-50 min-w-0">{children}</main>
+        <main className="flex-1 min-w-0 overflow-x-hidden bg-gray-50">{children}</main>
       </div>
     </PresentationProvider>
   );

@@ -24,7 +24,7 @@ export default async function ClientsPage() {
         </div>
       </div>
       <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="w-full text-sm min-w-[900px]">
+        <table className="w-full min-w-full text-sm md:min-w-[900px]">
           <thead className="bg-gray-100 text-left">
             <tr>
               <th className="p-3">{t('common.companyName')}</th>

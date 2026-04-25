@@ -47,7 +47,7 @@ export default async function AdminsPage() {
       <section>
         <h2 className="text-lg font-semibold mb-3">{t('admin.list')}</h2>
         <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="w-full text-sm min-w-[600px]">
+          <table className="w-full min-w-full text-sm md:min-w-[600px]">
             <thead className="bg-gray-100 text-left">
               <tr>
                 <th className="p-3">{t('sales.owner')}</th>

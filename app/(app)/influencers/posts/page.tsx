@@ -24,7 +24,7 @@ export default async function PostsPage() {
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="w-full text-sm min-w-[700px]">
+        <table className="w-full min-w-full text-sm md:min-w-[700px]">
           <thead className="bg-gray-100 text-left">
             <tr>
               <th className="p-3">{t('common.companyName')}</th>
