@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { deleteInfluencerAction } from '@/actions/influencers';
 import { contactStatusLabel } from '@/lib/labels';
 import ChannelIcon from '@/components/ChannelIcon';
 import { getI18n } from '@/lib/i18n/server';
-import FormStatusButton from '@/components/FormStatusButton';
+import DeleteButton from '@/components/influencer/DeleteButton';
 
 
 export default async function InfluencersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
@@ -56,15 +55,7 @@ export default async function InfluencersPage({ searchParams }: { searchParams: 
                 <td className="p-3">{contactStatusLabel(i.contact_status, locale)}</td>
                 <td className="p-3 space-x-2">
                   <Link href={`/influencers/${i.id}/edit`} className="text-blue-600">{t('common.edit')}</Link>
-                  <form action={deleteInfluencerAction.bind(null, i.id, '/influencers')} className="inline">
-                    <FormStatusButton
-                      pendingText={t('common.loading')}
-                      className="text-red-500 disabled:cursor-not-allowed disabled:opacity-60"
-                      onClick={(e) => { if (!confirm(t('delete.confirm'))) e.preventDefault(); }}
-                    >
-                      {t('common.delete')}
-                    </FormStatusButton>
-                  </form>
+                  <DeleteButton id={i.id} redirectTo="/influencers" />
                 </td>
               </tr>
             ))}

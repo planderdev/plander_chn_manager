@@ -4,11 +4,10 @@ import PhoneInput from '@/components/PhoneInput';
 import SubmitButton from '@/components/SubmitButton';
 import { saveApifyTokenAction, getApifyTokenStatus, saveExchangeRateAction } from '@/actions/settings';
 import Link from 'next/link';
-import { deleteAdminAction } from '@/actions/admins';
 import { getI18n } from '@/lib/i18n/server';
 import { DEFAULT_CNY_TO_KRW_RATE, formatExchangePolicy } from '@/lib/exchange-rate';
-import FormStatusButton from '@/components/FormStatusButton';
 import { syncMetricsNowAction } from '@/actions/sync-metrics';
+import DeleteButton from '@/components/admin/DeleteButton';
 
 export default async function AdminsPage() {
   const { locale, t } = await getI18n();
@@ -70,15 +69,7 @@ export default async function AdminsPage() {
                   <td className="p-3">{new Date(a.created_at).toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'ko-KR')}</td>
                   <td className="p-3 space-x-2">
                     <Link href={`/extras/admins/${a.id}`} className="text-blue-600">{t('common.edit')}</Link>
-                    <form action={deleteAdminAction.bind(null, a.id, '/extras/admins')} className="inline">
-                      <FormStatusButton
-                        pendingText={t('common.loading')}
-                        className="text-red-500 disabled:cursor-not-allowed disabled:opacity-60"
-                        onClick={(e) => { if (!confirm(t('delete.confirm'))) e.preventDefault(); }}
-                      >
-                        {t('common.delete')}
-                      </FormStatusButton>
-                    </form>
+                    <DeleteButton id={a.id} redirectTo="/extras/admins" />
                   </td>
                 </tr>
               ))}
